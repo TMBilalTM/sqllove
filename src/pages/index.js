@@ -7,7 +7,7 @@ import { Geist } from "next/font/google";
 import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserPlus, FaSignInAlt, FaMobile, FaShieldAlt, FaTachometerAlt, FaPaperPlane, FaDownload, FaBars, FaTimes } from "react-icons/fa";
 import Logo from "../components/Logo";
 import { getCurrentUser } from "../lib/api";
-import JsonLd from "../components/JsonLd";
+import SimpleJsonLd from "../components/SimpleJsonLd";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -51,9 +51,7 @@ export default function Home() {
         canonical="https://sqllove.vercel.app/"
       />
       
-      <JsonLd type="website" />
-      <JsonLd type="softwareApplication" />
-      <JsonLd type="organization" />
+      <SimpleJsonLd />
       
       <header className="fixed top-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
