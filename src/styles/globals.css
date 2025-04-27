@@ -3,11 +3,11 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --primary: #ff6b6b; /* Romantik kırmızı */
-  --primary-dark: #e84a5f;
+  --primary: #ff6b6b;
+  --primary-dark: #dd3636;
   --secondary: #a5dee5; /* Pastel mavi */
   --secondary-dark: #7ac7d1;
-  --accent: #ff9e7d; /* Şeftali tonu */
+  --accent: #f68084;
   --accent-dark: #ff8264;
   --success: #7bed9f;
   --warning: #ffda79;
@@ -29,10 +29,10 @@
     --background: #0f0d13;
     --foreground: #ededed;
     --primary: #ff6b6b; /* Tutarlılık için aynı kaldı */
-    --primary-dark: #e84a5f;
+    --primary-dark: #dd3636;
     --secondary: #7ac7d1; /* Koyu modda biraz daha koyu */
     --secondary-dark: #5eaebb;
-    --accent: #ff9e7d;
+    --accent: #f68084;
     --accent-dark: #ff8264;
     --love-gradient: linear-gradient(135deg, #ff6b6b, #e33371);
   }
@@ -64,12 +64,12 @@ body {
 }
 
 .animate-heartbeat {
-  animation: heartbeat 1.5s infinite ease-in-out;
+  animation: heartbeat 1.5s infinite;
 }
 
 /* Kart stilleri */
 .love-card {
-  border-radius: 16px;
+  border-radius: 1rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
   transition: all 0.3s ease;
   overflow: hidden;
@@ -82,18 +82,23 @@ body {
 
 /* Gradient butonlar */
 .btn-love {
-  background: var(--love-gradient);
+  background: linear-gradient(135deg, #ff6b6b 0%, #dd3636 100%);
   color: white;
+  font-weight: 500;
   transition: all 0.3s ease;
   border-radius: 12px;
   padding: 10px 20px;
-  font-weight: 600;
   box-shadow: 0 4px 12px rgba(255, 107, 107, 0.25);
 }
 
 .btn-love:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(255, 107, 107, 0.35);
+}
+
+.btn-love:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
 }
 
 /* Modern form stilleri */
@@ -126,6 +131,15 @@ body {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
   outline: none;
+}
+
+input, textarea, select {
+  transition: all 0.2s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
 }
 
 /* Leaflet harita bileşeni için özel stil */
@@ -237,4 +251,15 @@ input:checked + .love-slider:before {
 
 .hover-grow:hover {
   transform: scale(1.03);
+}
+
+/* Phone frame animation */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.phone-frame {
+  animation: float 6s ease-in-out infinite;
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync, FaUserCircle, FaRegPaperPlane, FaUserMinus, FaExclamationTriangle, FaDownload } from "react-icons/fa";
+import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync, FaUserCircle, FaRegPaperPlane, FaUserMinus, FaExclamationTriangle, FaDownload, FaCog, FaChevronRight } from "react-icons/fa";
 import Logo from "../components/Logo";
 import PermissionsManager from "../components/PermissionsManager";
 import RelationshipCounter from "../components/RelationshipCounter";
@@ -45,6 +45,7 @@ export default function Dashboard() {
   const [successMessage, setSuccessMessage] = useState("");
   const [unlinkModalOpen, setUnlinkModalOpen] = useState(false);
   const [unlinkLoading, setUnlinkLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'settings', 'events'
 
   const fetchData = useCallback(async () => {
     try {
@@ -70,7 +71,7 @@ export default function Dashboard() {
     }
   }, [router]);
 
-  // Refresh data handler without toast
+  // Refresh data handler
   const handleRefresh = async () => {
     setRefreshing(true);
     setSuccessMessage("");
@@ -160,7 +161,7 @@ export default function Dashboard() {
     };
   }, [router, fetchData]);
 
-  // Handle partner code submit without toast
+  // Handle partner code submit
   const handlePartnerCodeSubmit = async (e) => {
     e.preventDefault();
     
@@ -230,49 +231,84 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Yükleniyor...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 rounded-full border-4 border-primary border-t-transparent animate-spin mb-4"></div>
+          <div className="text-xl font-medium">Yükleniyor...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-pink-50 dark:from-gray-900 dark:to-gray-800">
-      <header className="bg-white dark:bg-gray-800 shadow">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Logo size="md" />
-          <div className="flex items-center gap-3">
-            <Link 
-              href="/download"
-              className="p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-              title="Uygulamayı İndir"
-            >
-              <FaDownload />
-            </Link>
-            <button 
-              onClick={handleRefresh} 
-              className={`p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition ${refreshing ? 'animate-spin' : ''}`}
-              disabled={refreshing}
-              aria-label="Yenile"
-            >
-              <FaSync />
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-              aria-label="Çıkış Yap"
-            >
-              <FaSignOutAlt /> <span className="hidden sm:inline">Çıkış</span>
-            </button>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 shadow-sm">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex justify-between items-center px-4 py-4">
+            <Logo size="md" />
+            <div className="flex items-center gap-3">
+              <Link
+                href="/download"
+                className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                title="Uygulamayı İndir"
+              >
+                <FaDownload />
+              </Link>
+              <button 
+                onClick={handleRefresh} 
+                className={`p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition ${refreshing ? 'animate-spin' : ''}`}
+                disabled={refreshing}
+                aria-label="Yenile"
+              >
+                <FaSync />
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                aria-label="Çıkış Yap"
+              >
+                <FaSignOutAlt /> <span className="hidden sm:inline">Çıkış</span>
+              </button>
+            </div>
           </div>
+          
+          {/* Mobile Navigation Tabs */}
+          {partner && (
+            <div className="border-t border-gray-200 dark:border-gray-700 flex justify-between text-sm font-medium md:hidden">
+              <button 
+                onClick={() => setActiveTab('dashboard')}
+                className={`flex-1 py-3 ${activeTab === 'dashboard' 
+                  ? 'text-primary border-b-2 border-primary' 
+                  : 'text-gray-500 dark:text-gray-400'}`}
+              >
+                Ana Sayfa
+              </button>
+              <button 
+                onClick={() => setActiveTab('events')}
+                className={`flex-1 py-3 ${activeTab === 'events' 
+                  ? 'text-primary border-b-2 border-primary' 
+                  : 'text-gray-500 dark:text-gray-400'}`}
+              >
+                Özel Günler
+              </button>
+              <button 
+                onClick={() => setActiveTab('settings')}
+                className={`flex-1 py-3 ${activeTab === 'settings' 
+                  ? 'text-primary border-b-2 border-primary' 
+                  : 'text-gray-500 dark:text-gray-400'}`}
+              >
+                Ayarlar
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-8 relative z-0">
         {/* Success message with higher z-index */}
         {successMessage && (
-          <div className="mb-4 p-3 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-xl text-sm border-l-4 border-green-500 flex justify-between items-center relative z-20">
-            <span>{successMessage}</span>
+          <div className="mb-4 p-4 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-xl text-sm border-l-4 border-green-500 flex justify-between items-center relative z-20 shadow-md">
+            <span className="font-medium">{successMessage}</span>
             <button onClick={() => setSuccessMessage("")} className="text-green-700 dark:text-green-300 hover:opacity-75">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
@@ -284,7 +320,7 @@ export default function Dashboard() {
         {/* Partner bağlantısını sonlandırma onay modalı */}
         {unlinkModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full shadow-xl">
               <div className="text-center mb-6">
                 <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
                   <FaExclamationTriangle className="text-red-500 text-2xl" />
@@ -327,21 +363,22 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="love-card bg-white dark:bg-gray-800 p-6 mb-8 relative z-10">
+        {/* User Profile Card */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm mb-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-pink-400 to-red-500 rounded-full flex items-center justify-center text-white text-3xl">
+            <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg">
               <FaUserCircle />
             </div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold mb-1 text-center sm:text-left">Merhaba, {user?.name}</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-4 text-center sm:text-left">Aşkınızı SQLLove ile paylaşın</p>
+            <div className="flex-1 text-center sm:text-left">
+              <h2 className="text-2xl font-bold mb-1">Merhaba, {user?.name}</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">Aşkınızı SQLLove ile paylaşın</p>
               
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-                <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
+                <h3 className="text-lg font-medium mb-3 flex items-center gap-2 justify-center sm:justify-start">
                   <FaRegPaperPlane className="text-primary" /> Partner Kodun
                 </h3>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl font-mono text-lg text-center tracking-wider">
+                  <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl font-mono text-lg text-center tracking-wider">
                     {partnerCode}
                   </div>
                   <button
@@ -366,13 +403,13 @@ export default function Dashboard() {
         </div>
 
         {!partner ? (
-          <div className="love-card bg-white dark:bg-gray-800 p-6 relative z-10">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
             <div className="text-center mb-6">
               <div className="inline-block p-4 bg-primary/10 rounded-full mb-4">
                 <FaHeart className="text-3xl text-primary" />
               </div>
               <h2 className="text-xl font-semibold mb-2">Partner Ekle</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
                 Sevgilinizle bağlantı kurmak için partnerinizin kodunu girin
               </p>
             </div>
@@ -383,19 +420,19 @@ export default function Dashboard() {
               </div>
             )}
 
-            <form onSubmit={handlePartnerCodeSubmit}>
-              <div className="flex gap-2 max-w-md mx-auto">
+            <form onSubmit={handlePartnerCodeSubmit} className="max-w-md mx-auto">
+              <div className="flex gap-2">
                 <input
                   type="text"
                   value={enteredCode}
                   onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
                   placeholder="Partnerinizin kodunu girin"
-                  className="love-input flex-1 bg-white dark:bg-gray-700 text-center font-mono tracking-wider uppercase text-lg pl-12"
+                  className="flex-1 p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-center font-mono tracking-wider uppercase text-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   required
                 />
                 <button
                   type="submit"
-                  className="btn-love flex items-center justify-center w-12 h-12"
+                  className="btn-love flex items-center justify-center w-14 h-14 rounded-xl"
                 >
                   <FaHeart />
                 </button>
@@ -403,116 +440,195 @@ export default function Dashboard() {
             </form>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="love-card bg-white dark:bg-gray-800 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 mr-3 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <FaUserFriends className="text-xl text-blue-500" />
-                  </div>
-                  <h2 className="text-xl font-semibold">Partner Bilgileri</h2>
-                </div>
-                
-                <button
-                  onClick={() => setUnlinkModalOpen(true)}
-                  className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
-                  title="Partnerliği sonlandır"
-                >
-                  <FaUserMinus />
-                </button>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Partner Adı</h3>
-                  <p className="font-medium text-lg">{partner.name}</p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Şarj Durumu</h3>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      (partner.batteryLevel > 50) ? "bg-green-100 text-green-500 dark:bg-green-900/30" : 
-                      (partner.batteryLevel > 20) ? "bg-yellow-100 text-yellow-500 dark:bg-yellow-900/30" : "bg-red-100 text-red-500 dark:bg-red-900/30"
-                    }`}>
-                      <FaBatteryThreeQuarters />
+          <div className="md:grid md:grid-cols-3 gap-6">
+            {/* Desktop View: Left Sidebar (Partner info & Connection status) */}
+            <div className="md:col-span-1 space-y-6">
+              {/* Partner bilgileri kartı */}
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center">
+                    <div className="w-12 h-12 mr-3 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 flex items-center justify-center text-white">
+                      <FaUserFriends className="text-xl" />
                     </div>
-                    <p className="font-medium text-lg">{partner.batteryLevel || "Bilinmiyor"}%</p>
+                    <h2 className="text-xl font-semibold">Partner Bilgileri</h2>
                   </div>
+                  
+                  {/* Partnerlik sonlandırma butonu */}
+                  <button
+                    onClick={() => setUnlinkModalOpen(true)}
+                    className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                    title="Partnerliği sonlandır"
+                  >
+                    <FaUserMinus />
+                  </button>
                 </div>
 
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Son Görülme</h3>
-                  <p className="font-medium">
-                    {partner.lastSeen 
-                      ? new Date(partner.lastSeen).toLocaleString("tr-TR", {
-                          year: 'numeric',
-                          month: 'long', 
-                          day: 'numeric', 
-                          hour: '2-digit', 
-                          minute: '2-digit'
-                        }) 
-                      : "Bilinmiyor"}
-                  </p>
-                </div>
-              </div>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Partner Adı</h3>
+                    <p className="font-medium text-lg">{partner.name}</p>
+                  </div>
 
-              <div className="mt-6">
-                <Link
-                  href="/map"
-                  className="btn-love w-full flex items-center justify-center gap-2 py-3"
-                >
-                  <FaMapMarkerAlt /> Haritada Göster
-                </Link>
-              </div>
-            </div>
-
-            <div className="love-card bg-white dark:bg-gray-800 p-6">
-              <div className="h-full flex flex-col items-center justify-center text-center">
-                <div className="mb-6">
-                  <FaHeart className="text-5xl text-primary animate-heartbeat mx-auto" />
-                </div>
-                <h3 className="text-xl font-medium mb-2">Sevgi Bağlantınız Aktif</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  {partner.name} ile konum paylaşımınız devam ediyor
-                </p>
-                
-                {user && user.batteryLevel && (
-                  <div className="flex flex-col items-center mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl w-full">
-                    <span className="text-sm text-gray-500 dark:text-gray-400 mb-2">Şarj durumunuz</span>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Şarj Durumu</h3>
                     <div className="flex items-center gap-2">
-                      <FaBatteryThreeQuarters className={`${
-                        (user.batteryLevel > 50) ? "text-green-500" : 
-                        (user.batteryLevel > 20) ? "text-yellow-500" : "text-red-500"
-                      }`} />
-                      <span className="font-medium">{user.batteryLevel}%</span>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        (partner.batteryLevel > 50) ? "bg-green-100 text-green-500 dark:bg-green-900/30" : 
+                        (partner.batteryLevel > 20) ? "bg-yellow-100 text-yellow-500 dark:bg-yellow-900/30" : "bg-red-100 text-red-500 dark:bg-red-900/30"
+                      }`}>
+                        <FaBatteryThreeQuarters className="text-xl" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-lg">{partner.batteryLevel || "?"} %</p>
+                        {partner.batteryLevel < 20 && <p className="text-xs text-red-500">Düşük şarj</p>}
+                      </div>
                     </div>
                   </div>
-                )}
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Son Görülme</h3>
+                    <p className="font-medium">
+                      {partner.lastSeen 
+                        ? new Date(partner.lastSeen).toLocaleString("tr-TR", {
+                            year: 'numeric',
+                            month: 'long', 
+                            day: 'numeric', 
+                            hour: '2-digit', 
+                            minute: '2-digit'
+                          }) 
+                        : "Bilinmiyor"}
+                    </p>
+                  </div>
+                  
+                  <div className="pt-3">
+                    <Link
+                      href="/map"
+                      className="flex items-center gap-2 w-full p-3 bg-primary text-white rounded-xl hover:bg-primary-dark transition shadow-sm justify-center"
+                    >
+                      <FaMapMarkerAlt /> Haritada Göster
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              {/* Connection status card */}
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
+                <div className="flex flex-col items-center text-center">
+                  <div className="mb-4">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+                      <FaHeart className="text-3xl text-primary animate-heartbeat" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-medium mb-2">Bağlantı Aktif</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    {partner.name} ile konum paylaşımınız devam ediyor
+                  </p>
+                  
+                  {user && user.batteryLevel && (
+                    <div className="flex flex-col items-center mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl w-full">
+                      <span className="text-sm text-gray-500 dark:text-gray-400 mb-2">Şarj durumunuz</span>
+                      <div className="flex items-center gap-2">
+                        <FaBatteryThreeQuarters className={`text-xl ${
+                          (user.batteryLevel > 50) ? "text-green-500" : 
+                          (user.batteryLevel > 20) ? "text-yellow-500" : "text-red-500"
+                        }`} />
+                        <span className="font-medium">{user.batteryLevel}%</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
-            <div className="md:col-span-2">
-              <RelationshipCounter />
-            </div>
-            
-            <div className="md:col-span-2">
-              <SpecialDates />
-            </div>
-            
-            <div className="md:col-span-2 relative z-10">
-              <PermissionsManager 
-                onSettingsUpdated={(settings) => {
-                  console.log("Settings updated:", settings);
-                }} 
-              />
+            {/* Desktop View: Right Content (Relationship Counter, Special Dates, Settings) */}
+            <div className="mt-6 md:mt-0 md:col-span-2 space-y-6">
+              {/* Mobile: Tab Content */}
+              {activeTab === 'dashboard' && (
+                <>
+                  {/* Relationship counter */}
+                  <RelationshipCounter />
+                  
+                  {/* Link to special events for mobile */}
+                  <div className="md:hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <FaHeart className="text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Özel Günler</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Önemli tarihlerinizi takip edin</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setActiveTab('events')} 
+                        className="text-primary"
+                      >
+                        <FaChevronRight />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Link to settings for mobile */}
+                  <div className="md:hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <FaCog className="text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Uygulama Ayarları</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">İzinler ve tercihler</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setActiveTab('settings')} 
+                        className="text-primary"
+                      >
+                        <FaChevronRight />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Desktop: Always show special dates */}
+                  <div className="hidden md:block">
+                    <SpecialDates />
+                  </div>
+                  
+                  {/* Desktop: Always show permissions manager */}
+                  <div className="hidden md:block">
+                    <PermissionsManager 
+                      onSettingsUpdated={(settings) => {
+                        console.log("Settings updated:", settings);
+                      }} 
+                    />
+                  </div>
+                </>
+              )}
+              
+              {activeTab === 'events' && (
+                <SpecialDates />
+              )}
+              
+              {activeTab === 'settings' && (
+                <PermissionsManager 
+                  onSettingsUpdated={(settings) => {
+                    console.log("Settings updated:", settings);
+                  }} 
+                />
+              )}
             </div>
           </div>
         )}
       </main>
       
-      <footer className="py-6 text-center text-sm text-gray-500">
+      <footer className="py-8 text-center text-sm text-gray-500">
         <p>SQLLove &copy; 2025 - Sevgi Her Yerde</p>
+        <div className="mt-3 flex justify-center gap-6">
+          <Link href="/privacy" className="hover:text-primary transition-colors">Gizlilik</Link>
+          <Link href="/terms" className="hover:text-primary transition-colors">Koşullar</Link>
+          <Link href="/contact" className="hover:text-primary transition-colors">İletişim</Link>
+        </div>
       </footer>
     </div>
   );
