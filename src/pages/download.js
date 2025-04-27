@@ -82,11 +82,11 @@ export default function Download() {
       <NextSeo
         title="SQLLove Uygulamasını İndir"
         description="SQLLove'u cihazınıza indirin ve sevgilinizle her an bağlantıda kalın. iOS, Android ve masaüstüne kurulum talimatları."
-        canonical="https://sqllove.com/download"
+        canonical="https://sqllove.vercel.app/download"
         openGraph={{
-          url: 'https://sqllove.com/download',
+          url: 'https://sqllove.vercel.app/download',
           title: 'SQLLove Uygulamasını İndir',
-          description: 'SQLLove'u cihazınıza indirin ve sevgilinizle her an bağlantıda kalın. iOS, Android ve masaüstüne kurulum talimatları.',
+          description: 'SQLLove u cihazınıza indirin ve sevgilinizle her an bağlantıda kalın. iOS, Android ve masaüstüne kurulum talimatları.',
         }}
       />
       

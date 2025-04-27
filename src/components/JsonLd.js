@@ -2,7 +2,7 @@ import { useRouter } from 'next/router';
 
 export default function JsonLd({ type, data = {} }) {
   const router = useRouter();
-  const baseUrl = 'https://sqllove.com';
+  const baseUrl = 'https://sqllove.vercel.app';
   const currentUrl = `${baseUrl}${router.asPath}`;
   
   const schemas = {
@@ -11,7 +11,7 @@ export default function JsonLd({ type, data = {} }) {
       '@type': 'WebSite',
       name: 'SQLLove',
       alternateName: 'SQL Love',
-      url: 'https://sqllove.com',
+      url: 'https://sqllove.vercel.app',
       description: 'Sevgilinizle gerçek zamanlı konum paylaşımı ve ilişki takibi uygulaması',
       ...data
     },
@@ -32,8 +32,8 @@ export default function JsonLd({ type, data = {} }) {
       '@context': 'https://schema.org',
       '@type': 'Organization',
       name: 'SQLLove',
-      url: 'https://sqllove.com',
-      logo: 'https://sqllove.com/logo.png',
+      url: 'https://sqllove.vercel.app',
+      logo: 'https://sqllove.vercel.app/logo.png',
       sameAs: [
         'https://twitter.com/sqlloveapp',
         'https://www.instagram.com/sqlloveapp',
@@ -49,7 +49,7 @@ export default function JsonLd({ type, data = {} }) {
           '@type': 'ListItem',
           position: 1,
           name: 'Ana Sayfa',
-          item: 'https://sqllove.com/'
+          item: 'https://sqllove.vercel.app/'
         },
         {
           '@type': 'ListItem',
