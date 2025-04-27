@@ -319,3 +319,119 @@ export const getUserSettings = async () => {
     return { success: false, error: error.message };
   }
 };
+
+/**
+ * Relationship API'leri
+ */
+
+// İlişki bilgilerini getir
+export const getRelationshipInfo = async () => {
+  try {
+    const response = await fetch('/api/relationship/info', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Relationship info error:', error);
+    throw error;
+  }
+};
+
+// İlişki başlangıç tarihini güncelle
+export const updateRelationshipDate = async (startDate) => {
+  try {
+    const response = await fetch('/api/relationship/info', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ start_date: startDate }),
+      credentials: 'include'
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Update relationship date error:', error);
+    throw error;
+  }
+};
+
+// Özel günleri getir
+export const getSpecialDates = async () => {
+  try {
+    const response = await fetch('/api/relationship/special-dates', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Special dates error:', error);
+    throw error;
+  }
+};
+
+// Yeni özel gün ekle
+export const addSpecialDate = async (specialDate) => {
+  try {
+    const response = await fetch('/api/relationship/special-dates', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(specialDate),
+      credentials: 'include'
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Add special date error:', error);
+    throw error;
+  }
+};
+
+// Özel gün güncelle
+export const updateSpecialDate = async (specialDate) => {
+  try {
+    const response = await fetch('/api/relationship/special-dates', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(specialDate),
+      credentials: 'include'
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Update special date error:', error);
+    throw error;
+  }
+};
+
+// Özel gün sil
+export const deleteSpecialDate = async (id) => {
+  try {
+    const response = await fetch('/api/relationship/special-dates', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id }),
+      credentials: 'include'
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Delete special date error:', error);
+    throw error;
+  }
+};

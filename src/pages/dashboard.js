@@ -4,6 +4,8 @@ import Link from "next/link";
 import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync, FaUserCircle, FaRegPaperPlane } from "react-icons/fa";
 import Logo from "../components/Logo";
 import PermissionsManager from "../components/PermissionsManager";
+import RelationshipCounter from "../components/RelationshipCounter";
+import SpecialDates from "../components/SpecialDates";
 import { getCurrentUser, linkPartner, logout, updateLocationAndBattery } from "../lib/api";
 import { getBatteryLevel } from "../lib/battery";
 
@@ -308,7 +310,7 @@ export default function Dashboard() {
                   value={enteredCode}
                   onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
                   placeholder="Partnerinizin kodunu girin"
-                  className="love-input flex-1 bg-white dark:bg-gray-700 text-center font-mono tracking-wider uppercase text-lg"
+                  className="love-input flex-1 bg-white dark:bg-gray-700 text-center font-mono tracking-wider uppercase text-lg pl-12"
                   required
                 />
                 <button
@@ -398,6 +400,16 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
+            </div>
+            
+            {/* İlişki sayacı bileşeni */}
+            <div className="md:col-span-2">
+              <RelationshipCounter />
+            </div>
+            
+            {/* Özel günler bileşeni */}
+            <div className="md:col-span-2">
+              <SpecialDates />
             </div>
             
             <div className="md:col-span-2 relative z-10">

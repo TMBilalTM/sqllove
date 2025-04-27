@@ -82,7 +82,7 @@ export default function Privacy() {
 
             <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Son güncelleme: Ocak 2024
+                Son güncelleme: Nisan 2025
               </p>
             </div>
           </div>

@@ -105,6 +105,23 @@ body {
   width: 100%;
 }
 
+.love-input.with-icon {
+  padding-left: 40px; /* İkon için boşluk bırak */
+}
+
+.input-icon-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-500);
+  pointer-events: none;
+}
+
 .love-input:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);

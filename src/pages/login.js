@@ -79,7 +79,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="love-input pl-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="love-input pl-12 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -104,7 +104,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="love-input pl-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="love-input pl-12 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>

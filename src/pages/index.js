@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Image from "next/image";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
-import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserPlus, FaSignInAlt, FaMobile, FaShieldAlt, FaTachometerAlt, FaPaperPlane } from "react-icons/fa";
+import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserPlus, FaSignInAlt, FaMobile, FaShieldAlt, FaTachometerAlt, FaPaperPlane, FaRegSmile } from "react-icons/fa";
 import Logo from "../components/Logo";
 import { getCurrentUser } from "../lib/api";
 
@@ -142,7 +142,7 @@ export default function Home() {
                     {/* App header */}
                     <div className="p-3 bg-primary text-white text-center shadow-sm">
                       <div className="flex justify-between items-center">
-                        <div className="text-xs">12:30</div>
+                        <div className="text-xs">14:33</div>
                         <div className="text-base font-medium">SQLLove</div>
                         <div className="flex items-center text-xs">
                           <FaBatteryThreeQuarters className="ml-1" />
@@ -221,11 +221,16 @@ export default function Home() {
                         <input 
                           type="text" 
                           placeholder="Mesaj yazın..." 
-                          className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm py-2 px-4 focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-primary"
                         />
-                        <button className="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-white">
-                          <FaPaperPlane className="text-xs" />
-                        </button>
+                        <div className="relative">
+                          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                            <FaRegSmile className="text-sm" />
+                          </div>
+                          <button className="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-white">
+                            <FaPaperPlane className="text-xs" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

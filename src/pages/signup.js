@@ -76,7 +76,7 @@ export default function Signup() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className="love-input pl-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="love-input pl-12 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -96,7 +96,7 @@ export default function Signup() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="love-input pl-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="love-input pl-12 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -117,7 +117,7 @@ export default function Signup() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={8}
-                  className="love-input pl-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="love-input pl-12 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -138,7 +138,7 @@ export default function Signup() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   minLength={8}
-                  className="love-input pl-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  className="love-input pl-12 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>

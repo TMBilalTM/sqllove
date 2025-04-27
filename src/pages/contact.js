@@ -107,7 +107,7 @@ export default function Contact() {
                     onChange={handleChange}
                     placeholder="Adınız ve soyadınız"
                     required
-                    className="love-input pl-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    className="love-input pl-12 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
               </div>
