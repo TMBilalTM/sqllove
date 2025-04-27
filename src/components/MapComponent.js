@@ -5,13 +5,9 @@ import { getBatteryLevel } from "../lib/battery";
 import dynamic from "next/dynamic";
 
 // Import Leaflet dynamically with no SSR
-let L;
-const LeafletModule = dynamic(
-  () => import('./LeafletModule').then(module => {
-    L = module.default; // Assign the default export to L
-    return module;
-  }),
-  { ssr: false, loading: () => <div className="h-screen flex items-center justify-center">Harita yükleniyor...</div> }
+const LeafletDynamic = dynamic(
+  () => import('./LeafletModule'),
+  { ssr: false }
 );
 
 export default function MapComponent({
@@ -25,17 +21,39 @@ export default function MapComponent({
   const [markers, setMarkers] = useState({});
   const [error, setError] = useState(null);
   const [userView, setUserView] = useState(true); // Kullanıcı görünümünü takip etmek için state
+  const [leafletLoaded, setLeafletLoaded] = useState(false);
   
   // Map referansını izlemek için ref
   const mapRef = useRef(null);
   
-  // Initialize map when component is mounted
+  // Initialize Leaflet
   useEffect(() => {
-    if (!L || typeof window === "undefined") return;
+    // Check if we're on client-side
+    if (typeof window === 'undefined') return;
+    
+    // Try to get L from window after LeafletModule has initialized it
+    const initLeaflet = () => {
+      if (window.L) {
+        setLeafletLoaded(true);
+      } else {
+        // If L is not available yet, try again in 100ms
+        setTimeout(initLeaflet, 100);
+      }
+    };
+    
+    initLeaflet();
+  }, []);
+  
+  // Initialize map when Leaflet is loaded
+  useEffect(() => {
+    if (!leafletLoaded || !window.L) return;
     if (map) return;
-
+    
     try {
       console.log("Initializing map");
+      
+      // Get Leaflet from window
+      const L = window.L;
       
       // Create map with default center
       const mapInstance = L.map('map', {
@@ -60,13 +78,14 @@ export default function MapComponent({
       console.error("Error initializing map:", err);
       setError("Harita yüklenirken bir hata oluştu");
     }
-  }, [map]);
+  }, [leafletLoaded, map]);
   
   // Update markers when location changes
   useEffect(() => {
-    if (!map || !L) return;
+    if (!map || !leafletLoaded || !window.L) return;
 
     try {
+      const L = window.L;
       const newMarkers = { ...markers };
       
       // Kullanıcı marker'ını güncelle
@@ -193,7 +212,7 @@ export default function MapComponent({
     } catch (err) {
       console.error("Error updating markers:", err);
     }
-  }, [map, userLocation, partnerLocation, userName, partnerName, markers, userView]);
+  }, [map, leafletLoaded, userLocation, partnerLocation, userName, partnerName, markers, userView]);
 
   // Konum güncelleme işlemleri
   useEffect(() => {
@@ -236,7 +255,7 @@ export default function MapComponent({
 
   return (
     <>
-      <LeafletModule />
+      <LeafletDynamic />
       <div id="map" className="w-full h-full z-10"></div>
       
       {error && (

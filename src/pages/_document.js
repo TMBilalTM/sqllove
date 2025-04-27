@@ -16,6 +16,14 @@ export default function Document() {
         <meta name="msapplication-tap-highlight" content="no" />
         <meta name="theme-color" content="#ff6b6b" />
 
+        {/* Leaflet CSS */}
+        <link 
+          rel="stylesheet" 
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossOrigin=""
+        />
+
         {/* Discord Embed Optimizasyonu */}
         <meta property="og:site_name" content="SQLLove" />
         <meta property="og:url" content="https://sqllove.vercel.app" />

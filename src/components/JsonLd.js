@@ -63,11 +63,15 @@ export default function JsonLd({ type, data = {} }) {
   };
   
   const schemaData = schemas[type] || {};
+
+  // Convert schema to string
+  const schemaString = JSON.stringify(schemaData);
   
+  // The component must return a valid JSX element
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+      dangerouslySetInnerHTML={{ __html: schemaString }}
     />
   );
 }
