@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import { NextSeo } from 'next-seo';
 import Head from 'next/head';
 import { FaDownload, FaArrowLeft, FaApple, FaAndroid, FaWindows, FaChrome, FaQuestion, FaCheck } from "react-icons/fa";
 import Logo from "../components/Logo";
@@ -78,6 +79,17 @@ export default function Download() {
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-pink-50 dark:from-gray-900 dark:to-gray-800">
+      <NextSeo
+        title="SQLLove Uygulamasını İndir"
+        description="SQLLove'u cihazınıza indirin ve sevgilinizle her an bağlantıda kalın. iOS, Android ve masaüstüne kurulum talimatları."
+        canonical="https://sqllove.com/download"
+        openGraph={{
+          url: 'https://sqllove.com/download',
+          title: 'SQLLove Uygulamasını İndir',
+          description: 'SQLLove'u cihazınıza indirin ve sevgilinizle her an bağlantıda kalın. iOS, Android ve masaüstüne kurulum talimatları.',
+        }}
+      />
+      
       <Head>
         <title>SQLLove - Uygulamayı İndir</title>
         <meta name="description" content="SQLLove uygulamasını cihazınıza indirin ve sevgilinizle bağlantıda kalın." />

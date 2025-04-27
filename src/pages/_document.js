@@ -16,6 +16,26 @@ export default function Document() {
         <meta name="msapplication-tap-highlight" content="no" />
         <meta name="theme-color" content="#ff6b6b" />
 
+        {/* Discord Embed Optimizasyonu */}
+        <meta property="og:site_name" content="SQLLove" />
+        <meta property="og:url" content="https://sqllove.vercel.app" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="SQLLove - Sevgilinizle Her An Bağlantıda Kalın" />
+        <meta property="og:description" content="Sevgilinizle konumunuzu paylaşın, özel anlarınızı takip edin ve her an bağlantıda kalın." />
+        <meta property="og:image" content="https://sqllove.vercel.app/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="SQLLove - Sevgililer için konum paylaşım uygulaması" />
+
+        {/* Twitter Embed Optimizasyonu */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@sqlloveapp" />
+        <meta name="twitter:creator" content="@sqlloveapp" />
+        <meta name="twitter:title" content="SQLLove - Sevgilinizle Her An Bağlantıda Kalın" />
+        <meta name="twitter:description" content="Sevgilinizle konumunuzu paylaşın, özel anlarınızı takip edin ve her an bağlantıda kalın." />
+        <meta name="twitter:image" content="https://sqllove.vercel.app/og-image.png" />
+        <meta name="twitter:image:alt" content="SQLLove - Sevgililer için konum paylaşım uygulaması" />
+
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon-152x152.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180x180.png" />

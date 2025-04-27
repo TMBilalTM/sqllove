@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import Link from "next/link";
+import { NextSeo } from 'next-seo';
 import { Geist, Geist_Mono } from "next/font/google";
 import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserPlus, FaSignInAlt, FaMobile, FaShieldAlt, FaTachometerAlt, FaPaperPlane, FaRegSmile, FaDownload } from "react-icons/fa";
 import Logo from "../components/Logo";
 import { getCurrentUser } from "../lib/api";
+import JsonLd from "../components/JsonLd";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,6 +52,36 @@ export default function Home() {
     <div
       className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)]`}
     >
+      <NextSeo
+        title="Sevgilinizle Her An Bağlantıda Kalın"
+        description="SQLLove ile sevgilinizle gerçek zamanlı konum paylaşın, özel günlerinizi takip edin ve ilişkinizi daha yakın hissedin."
+        canonical="https://sqllove.vercel.app/"
+        openGraph={{
+          url: 'https://sqllove.vercel.app/',
+          title: 'SQLLove - Sevgilinizle Gerçek Zamanlı Bağlantı',
+          description: 'Sevgilinizle konumunuzu paylaşın, özel anlarınızı takip edin ve her an bağlantıda kalın.',
+          images: [
+            {
+              url: 'https://sqllove.vercel.app/og-image.png',
+              width: 1200,
+              height: 630,
+              alt: 'SQLLove Anasayfa',
+              type: 'image/png',
+            }
+          ],
+          site_name: 'SQLLove',
+        }}
+        twitter={{
+          handle: '@sqlloveapp',
+          site: '@sqlloveapp',
+          cardType: 'summary_large_image',
+        }}
+      />
+      
+      <JsonLd type="website" />
+      <JsonLd type="softwareApplication" />
+      <JsonLd type="organization" />
+      
       <header className="fixed top-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md z-50 shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <Logo size="md" />

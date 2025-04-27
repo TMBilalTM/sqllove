@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
-import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { DefaultSeo } from 'next-seo';
+import SEO from '../../next-seo.config';
 import '../styles/globals.css';
 
 function MyApp({ Component, pageProps }) {
-  const router = useRouter();
-
   useEffect(() => {
     // PWA Servis Worker Kaydı
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
@@ -24,13 +23,20 @@ function MyApp({ Component, pageProps }) {
 
   return (
     <>
+      <DefaultSeo {...SEO} />
       <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
         <meta name="theme-color" content="#ff6b6b" />
+        
+        {/* WhatsApp Embed Optimizasyonu */}
+        <meta property="og:image" content="https://sqllove.vercel.app/og-image.png" />
+        <meta property="og:image:width" content="300" /> 
+        <meta property="og:image:height" content="300" />
+        <meta property="og:image:alt" content="SQLLove" />
+        
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <title>SQLLove - Sevgilinizle Her An Bağlantıda</title>
       </Head>
       <Component {...pageProps} />
     </>
