@@ -75,10 +75,9 @@ try {
             $stmt = $db->prepare("DELETE FROM relationships WHERE (user_id = ? AND partner_id = ?) OR (user_id = ? AND partner_id = ?)");
             $stmt->execute([$userId, $partnerId, $partnerId, $userId]);
 
-            // Konum verilerini silme (sadece partner bağlantısı değil)
-            // Eğer konumları da silmek istiyorsanız bu satırı aktifleştirin
-            // $stmt = $db->prepare("DELETE FROM locations WHERE user_id = ? OR user_id = ?");
-            // $stmt->execute([$userId, $partnerId]);
+            // Users tablosundaki partner_id değerlerini sıfırla
+            $stmt = $db->prepare("UPDATE users SET partner_id = NULL WHERE id = ? OR id = ?");
+            $stmt->execute([$userId, $partnerId]);
 
             // İşlemleri tamamla
             $db->commit();
