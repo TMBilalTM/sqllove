@@ -2,15 +2,28 @@ import { useEffect, useState, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { renderToStaticMarkup } from "react-dom/server";
+import { FaMapMarkerAlt, FaHeart, FaUser, FaHome } from "react-icons/fa";
 import { updateLocationAndBattery } from "../lib/api";
 
-// Leaflet simgeler için düzeltme
-const fixLeafletIcon = () => {
-  delete L.Icon.Default.prototype._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: "/icons/marker-icon-2x.png",
-    iconUrl: "/icons/marker-icon.png",
-    shadowUrl: "/icons/marker-shadow.png",
+// Leaflet simgeler için düzeltme - React Icons ile özel marker oluşturma
+const createCustomIcon = (IconComponent, color, size = 32) => {
+  const iconMarkup = renderToStaticMarkup(
+    <div style={{ 
+      color, 
+      fontSize: `${size}px`,
+      filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.5))" 
+    }}>
+      <IconComponent />
+    </div>
+  );
+
+  return L.divIcon({
+    html: iconMarkup,
+    className: "custom-icon",
+    iconSize: [size, size],
+    iconAnchor: [size/2, size],
+    popupAnchor: [0, -size]
   });
 };
 
@@ -97,7 +110,6 @@ export default function MapComponent({ userLocation, partnerLocation, userName, 
   const [mapReady, setMapReady] = useState(false);
   
   useEffect(() => {
-    fixLeafletIcon();
     setMapReady(true);
   }, []);
   
@@ -105,26 +117,9 @@ export default function MapComponent({ userLocation, partnerLocation, userName, 
   if (userLocation) positions.push([userLocation.lat, userLocation.lng]);
   if (partnerLocation) positions.push([partnerLocation.lat, partnerLocation.lng]);
   
-  // Özel simgeler
-  const userIcon = new L.Icon({
-    iconUrl: "/icons/user-marker.png",
-    iconRetinaUrl: "/icons/user-marker-2x.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: "/icons/marker-shadow.png",
-    shadowSize: [41, 41]
-  });
-  
-  const partnerIcon = new L.Icon({
-    iconUrl: "/icons/partner-marker.png",
-    iconRetinaUrl: "/icons/partner-marker-2x.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: "/icons/marker-shadow.png",
-    shadowSize: [41, 41]
-  });
+  // Özel simgeler - React Icons kullanarak
+  const userIcon = createCustomIcon(FaUser, "#3B82F6", 36); // Mavi kullanıcı simgesi
+  const partnerIcon = createCustomIcon(FaHeart, "#EF4444", 36); // Kırmızı kalp simgesi
 
   return (
     <>

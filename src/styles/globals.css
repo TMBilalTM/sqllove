@@ -24,3 +24,34 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans, Arial, Helvetica, sans-serif);
 }
+
+/* Leaflet harita bileşeni için özel stil */
+.custom-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none !important;
+  border: none;
+}
+
+.leaflet-div-icon {
+  background: transparent;
+  border: none;
+}
+
+.leaflet-marker-icon svg {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+/* Dark mode için harita kontrolleri */
+@media (prefers-color-scheme: dark) {
+  .leaflet-control {
+    background-color: #333 !important;
+    color: #fff !important;
+  }
+  
+  .leaflet-control a {
+    color: #fff !important;
+    background-color: #444 !important;
+  }
+}
