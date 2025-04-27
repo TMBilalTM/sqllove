@@ -1,16 +1,13 @@
 /**
- * Kibrisquiz.com API ile iletişim için yardımcı fonksiyonlar
+ * Kibrisquiz.com API ile iletişim için yardımcı fonksiyonlar (CORS-Proxy ile)
  */
 
-// API base URL
-const API_URL = process.env.API_BASE_URL || 'https://kibrisquiz.com/api';
-
-/**
- * API'ye istek atmak için temel fonksiyon
- */
+// API istek işleyicisi
 const apiRequest = async (endpoint, options = {}) => {
   try {
-    const url = `${API_URL}${endpoint}`;
+    // CORS Proxy'yi kullan
+    const url = `/api/cors-proxy?endpoint=${encodeURIComponent(endpoint.replace(/^\//, ''))}`;
+    
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -19,7 +16,7 @@ const apiRequest = async (endpoint, options = {}) => {
     const config = {
       ...options,
       headers,
-      credentials: 'include', // Cookie'leri dahil et
+      credentials: 'include',
     };
 
     const response = await fetch(url, config);
@@ -27,10 +24,8 @@ const apiRequest = async (endpoint, options = {}) => {
     // Oturum hatalarını yakala
     if (response.status === 401) {
       if (typeof window !== 'undefined') {
-        // Client-side'da oturum hatası olduğunda event gönder
         window.dispatchEvent(new CustomEvent('authError'));
         
-        // Login sayfasına yönlendir
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
