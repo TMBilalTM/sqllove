@@ -7,7 +7,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req, res) {
   // Get the target endpoint from query
   const { endpoint } = req.query;
-  
+
   if (!endpoint) {
     console.error('No endpoint specified in CORS proxy request');
     return res.status(400).json({ success: false, message: 'API endpoint not specified' });
@@ -15,26 +15,31 @@ export default async function handler(req, res) {
 
   // Build the full target URL
   const targetUrl = `https://kibrisquiz.com/api/${endpoint.replace(/^\//, '')}`;
-  
+
   try {
     console.log(`[CORS Proxy] Forwarding ${req.method} request to: ${targetUrl}`);
-    
+
     // Prepare headers for the outgoing request
     const headers = {
       'Content-Type': 'application/json',
     };
-    
+
     // Copy any authorization header
     if (req.headers.authorization) {
       headers['Authorization'] = req.headers.authorization;
     }
-    
+
+    // Forward cookies if present
+    if (req.headers.cookie) {
+      headers['Cookie'] = req.headers.cookie;
+    }
+
     // Prepare the fetch options
     const fetchOptions = {
       method: req.method,
       headers,
     };
-    
+
     // For POST/PUT/PATCH requests, add the body
     if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
       if (req.body) {
@@ -80,9 +85,26 @@ export default async function handler(req, res) {
       };
     }
     
-    // Forward any Set-Cookie headers from the API response
+    // Forward all important headers from the response
+    const headersToForward = [
+      'set-cookie',
+      'authorization',
+      'www-authenticate',
+      'cache-control',
+      'content-type'
+    ];
+    
+    for (const headerName of headersToForward) {
+      const headerValue = response.headers.get(headerName);
+      if (headerValue) {
+        res.setHeader(headerName, headerValue);
+      }
+    }
+    
+    // Handle Set-Cookie specifically for auth purposes
     const setCookieHeader = response.headers.get('set-cookie');
     if (setCookieHeader) {
+      console.log('[CORS Proxy] Forwarding Set-Cookie header');
       res.setHeader('Set-Cookie', setCookieHeader);
     }
     
