@@ -2,33 +2,24 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  // Webpack konfigürasyonu (output klasörü ayarları için)
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // PWA için dosya kopyalama ayarları burada yapılabilir
-    }
+  // Add favicon.ico to the root for favicon auto-discovery
+  webpack(config) {
     return config;
   },
+  // Show error page for missing favicon.ico
   async headers() {
     return [
       {
-        source: '/service-worker.js',
+        source: '/favicon.ico',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=0, must-revalidate',
+            value: 'public, max-age=86400, must-revalidate',
           },
         ],
       },
     ];
   },
-  // PWA için ikon dosyalarının public klasörüne kopyalanmasını sağlayan ayarlar
-  // (Bu işlem için normalde ayrı bir script yazılabilir)
-  // ESLint configuration for Next.js
-  eslint: {
-    // Don't run ESLint during build to avoid blocking compilation
-    ignoreDuringBuilds: true,
-  }
 }
 
-module.exports = nextConfig;
+module.exports = nextConfig

@@ -29,6 +29,7 @@ function MyApp({ Component, pageProps }) {
         <meta name="theme-color" content="#ff6b6b" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <title>SQLLove - Sevgilinizle Her An Bağlantıda</title>
       </Head>
       <Component {...pageProps} />
