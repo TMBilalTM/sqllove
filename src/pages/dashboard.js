@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync, FaUserCircle, FaRegPaperPlane, FaUserMinus, FaExclamationTriangle, FaDownload, FaCog, FaChevronRight } from "react-icons/fa";
@@ -8,6 +8,7 @@ import RelationshipCounter from "../components/RelationshipCounter";
 import SpecialDates from "../components/SpecialDates";
 import { getCurrentUser, linkPartner, unlinkPartner, logout, updateLocationAndBattery } from "../lib/api";
 import { getBatteryLevel } from "../lib/battery";
+import useWindowSize from "../hooks/useWindowSize";
 
 // Import serviceWorkerBridge functions if they exist, otherwise create empty placeholders
 const getLocationWorker = async () => {
@@ -46,6 +47,13 @@ export default function Dashboard() {
   const [unlinkModalOpen, setUnlinkModalOpen] = useState(false);
   const [unlinkLoading, setUnlinkLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'settings', 'events'
+
+  const dashboardSectionRef = useRef(null);
+  const eventsSectionRef = useRef(null);
+  const settingsSectionRef = useRef(null);
+
+  const { width } = useWindowSize();
+  const isMobile = width < 768;
 
   const fetchData = useCallback(async () => {
     try {
@@ -160,6 +168,35 @@ export default function Dashboard() {
       clearInterval(dataInterval);
     };
   }, [router, fetchData]);
+
+  useEffect(() => {
+    if (!partner) return;
+    
+    const scrollToSection = (ref) => {
+      if (ref && ref.current) {
+        ref.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    };
+    
+    if (isMobile) {
+      switch(activeTab) {
+        case 'dashboard':
+          scrollToSection(dashboardSectionRef);
+          break;
+        case 'events':
+          scrollToSection(eventsSectionRef);
+          break;
+        case 'settings':
+          scrollToSection(settingsSectionRef);
+          break;
+        default:
+          break;
+      }
+    }
+  }, [activeTab, partner, isMobile]);
 
   // Handle partner code submit
   const handlePartnerCodeSubmit = async (e) => {
@@ -542,80 +579,91 @@ export default function Dashboard() {
             
             {/* Desktop View: Right Content (Relationship Counter, Special Dates, Settings) */}
             <div className="mt-6 md:mt-0 md:col-span-2 space-y-6">
-              {/* Mobile: Tab Content */}
-              {activeTab === 'dashboard' && (
-                <>
-                  {/* Relationship counter */}
-                  <RelationshipCounter />
-                  
-                  {/* Link to special events for mobile */}
-                  <div className="md:hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <FaHeart className="text-primary" />
+              {/* Dashboard Section */}
+              <div ref={dashboardSectionRef} id="dashboard-section" className="scroll-mt-24">
+                {activeTab === 'dashboard' || !isMobile ? (
+                  <>
+                    {/* Relationship counter */}
+                    <RelationshipCounter />
+                    
+                    {/* Link to special events for mobile */}
+                    <div className="md:hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <FaHeart className="text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium">Özel Günler</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Önemli tarihlerinizi takip edin</p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-medium">Özel Günler</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Önemli tarihlerinizi takip edin</p>
-                        </div>
+                        <button 
+                          onClick={() => setActiveTab('events')} 
+                          className="text-primary"
+                        >
+                          <FaChevronRight />
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => setActiveTab('events')} 
-                        className="text-primary"
-                      >
-                        <FaChevronRight />
-                      </button>
                     </div>
-                  </div>
-                  
-                  {/* Link to settings for mobile */}
-                  <div className="md:hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <FaCog className="text-primary" />
+                    
+                    {/* Link to settings for mobile */}
+                    <div className="md:hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <FaCog className="text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium">Uygulama Ayarları</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">İzinler ve tercihler</p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-medium">Uygulama Ayarları</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">İzinler ve tercihler</p>
-                        </div>
+                        <button 
+                          onClick={() => setActiveTab('settings')} 
+                          className="text-primary"
+                        >
+                          <FaChevronRight />
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => setActiveTab('settings')} 
-                        className="text-primary"
-                      >
-                        <FaChevronRight />
-                      </button>
                     </div>
-                  </div>
-                  
-                  {/* Desktop: Always show special dates */}
-                  <div className="hidden md:block">
-                    <SpecialDates />
-                  </div>
-                  
-                  {/* Desktop: Always show permissions manager */}
-                  <div className="hidden md:block">
-                    <PermissionsManager 
-                      onSettingsUpdated={(settings) => {
-                        console.log("Settings updated:", settings);
-                      }} 
-                    />
-                  </div>
-                </>
-              )}
+                  </>
+                ) : null}
+              </div>
               
-              {activeTab === 'events' && (
-                <SpecialDates />
-              )}
+              {/* Events Section */}
+              <div ref={eventsSectionRef} id="events-section" className="scroll-mt-24">
+                {activeTab === 'events' || !isMobile ? (
+                  <SpecialDates />
+                ) : null}
+              </div>
               
-              {activeTab === 'settings' && (
-                <PermissionsManager 
-                  onSettingsUpdated={(settings) => {
-                    console.log("Settings updated:", settings);
-                  }} 
-                />
+              {/* Settings Section */}
+              <div ref={settingsSectionRef} id="settings-section" className="scroll-mt-24">
+                {activeTab === 'settings' || !isMobile ? (
+                  <PermissionsManager 
+                    onSettingsUpdated={(settings) => {
+                      console.log("Settings updated:", settings);
+                    }} 
+                  />
+                ) : null}
+              </div>
+              
+              {/* Back to top button for mobile */}
+              {activeTab !== 'dashboard' && (
+                <div className="fixed bottom-6 right-6 md:hidden z-50">
+                  <button
+                    onClick={() => {
+                      setActiveTab('dashboard');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="w-12 h-12 rounded-full bg-primary text-white shadow-lg flex items-center justify-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                    </svg>
+                  </button>
+                </div>
               )}
             </div>
           </div>
