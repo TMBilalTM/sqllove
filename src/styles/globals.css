@@ -160,6 +160,89 @@ input:focus, textarea:focus, select:focus {
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
+/* Map Marker Styles */
+.map-marker {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.user-marker .marker-icon {
+  background-color: #3b82f6;
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.partner-marker .marker-icon {
+  background-color: #ff6b6b;
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.marker-pulse {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transform: scale(1);
+  opacity: 1;
+  animation: pulse 2s infinite;
+}
+
+.user-marker .marker-pulse {
+  background-color: rgba(59, 130, 246, 0.3);
+}
+
+.partner-marker .marker-pulse {
+  background-color: rgba(255, 107, 107, 0.3);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+}
+
+.distance-bubble {
+  background-color: rgba(255, 107, 107, 0.9);
+  color: white;
+  border-radius: 15px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.distance-bubble-container {
+  background: none !important;
+  border: none !important;
+}
+
 /* Dark mode için harita kontrolleri */
 @media (prefers-color-scheme: dark) {
   .leaflet-control {

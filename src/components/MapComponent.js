@@ -1,62 +1,33 @@
-import { useEffect, useState } from "react";
-import L from "leaflet";
-import { renderToStaticMarkup } from "react-dom/server";
-import { FaHeart, FaUser } from "react-icons/fa";
+import { useState, useEffect, useRef } from "react";
+import { FaMapMarkerAlt, FaHeart, FaRegDotCircle, FaCrosshairs } from "react-icons/fa";
 import { updateLocationAndBattery } from "../lib/api";
 import { getBatteryLevel } from "../lib/battery";
+import dynamic from "next/dynamic";
 
-// Make sure you import leaflet CSS
-import "leaflet/dist/leaflet.css";
+// Leaflet'i sadece client-side'da import et
+const LeafletModule = dynamic(() => import('./LeafletModule'), {
+  ssr: false,
+  loading: () => <div className="h-screen flex items-center justify-center">Harita yükleniyor...</div>
+});
 
-// Helper function to validate coordinates
-const isValidCoordinate = (lat, lng) => {
-  // Check if lat and lng are valid numbers within reasonable bounds
-  return (
-    typeof lat === 'number' && 
-    typeof lng === 'number' && 
-    !isNaN(lat) && 
-    !isNaN(lng) && 
-    lat >= -90 && 
-    lat <= 90 && 
-    lng >= -180 && 
-    lng <= 180
-  );
-};
-
-export default function MapComponent({ userLocation, partnerLocation, userName, partnerName, onLocationUpdate }) {
+export default function MapComponent({
+  userLocation,
+  partnerLocation,
+  userName = "Sen",
+  partnerName = "Partneriniz",
+  onLocationUpdate = null,
+}) {
   const [map, setMap] = useState(null);
   const [markers, setMarkers] = useState({});
   const [error, setError] = useState(null);
-
-  // Create custom icons for user and partner
-  const createIcon = (Component, color, pulseEffect = false) => {
-    const iconHtml = renderToStaticMarkup(
-      <div style={{ 
-        color: color, 
-        fontSize: "28px", 
-        filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.3))",
-        animation: pulseEffect ? "heartbeat 1.5s infinite ease-in-out" : "none"
-      }}>
-        <Component />
-      </div>
-    );
-    
-    return L.divIcon({
-      html: iconHtml,
-      className: "custom-div-icon",
-      iconSize: [35, 35],
-      iconAnchor: [17, 35],
-      popupAnchor: [0, -35]
-    });
-  };
-
-  // Initialize map
+  const [userView, setUserView] = useState(true); // Kullanıcı görünümünü takip etmek için state
+  
+  // Map referansını izlemek için ref
+  const mapRef = useRef(null);
+  
+  // Leaflet ve L'yi dinamik olarak import et
   useEffect(() => {
-    // Check if Leaflet is available and window is defined
-    if (!L || typeof window === "undefined") return;
-
-    // Check if map has already been initialized
-    if (map) return;
+    if (!LeafletModule || typeof window === "undefined") return;
 
     try {
       console.log("Initializing map");
@@ -72,132 +43,161 @@ export default function MapComponent({ userLocation, partnerLocation, userName, 
         ]
       });
       
+      // Harita hareket ettirildiğinde otomatik takibi durdur
+      mapInstance.on('dragstart', () => {
+        setUserView(false);
+      });
+      
+      // Harita referansını kaydet
+      mapRef.current = mapInstance;
       setMap(mapInstance);
     } catch (err) {
       console.error("Error initializing map:", err);
       setError("Harita yüklenirken bir hata oluştu");
     }
     
-    // Clean up
     return () => {
-      if (map) {
+      if (mapRef.current) {
         console.log("Removing map");
-        map.remove();
+        mapRef.current.remove();
       }
     };
-  }, [map]); // Add map as dependency
+  }, []);
 
-  // Handle markers
+  // Marker'ları oluştur ve güncelle
   useEffect(() => {
     if (!map) return;
 
     try {
       const newMarkers = { ...markers };
-      const bounds = L.latLngBounds([]);
-      let validMarkerFound = false;
       
-      // Create icons
-      const userIcon = createIcon(FaUser, "#3B82F6");
-      const partnerIcon = createIcon(FaHeart, "#EF4444", true);
-
-      // Update user marker if coordinates are valid
-      if (userLocation && isValidCoordinate(userLocation.lat, userLocation.lng)) {
-        const pos = [userLocation.lat, userLocation.lng];
-        validMarkerFound = true;
+      // Kullanıcı marker'ını güncelle
+      if (userLocation) {
+        const userLatLng = [userLocation.latitude, userLocation.longitude];
         
-        if (newMarkers.user) {
-          newMarkers.user.setLatLng(pos);
+        if (!markers.user) {
+          // Kullanıcı markeri henüz oluşturulmadıysa oluştur
+          const userIcon = L.divIcon({
+            html: `<div class="map-marker user-marker"><div class="marker-icon">
+                    <i class="fa-map-marker-alt"></i></div><div class="marker-pulse"></div></div>`,
+            className: 'user-marker-container',
+            iconSize: [40, 40],
+            iconAnchor: [20, 40],
+          });
+          
+          newMarkers.user = L.marker(userLatLng, { 
+            icon: userIcon,
+            title: userName 
+          }).addTo(map);
+          
+          // Popupu ekle
+          newMarkers.user.bindPopup(`<b>${userName}</b><br>Burada`);
         } else {
-          newMarkers.user = L.marker(pos, { icon: userIcon })
-            .bindPopup(userName || "Ben")
-            .addTo(map);
+          // Varolan markeri güncelle
+          newMarkers.user.setLatLng(userLatLng);
         }
         
-        bounds.extend(pos);
-      } else if (newMarkers.user) {
-        map.removeLayer(newMarkers.user);
-        delete newMarkers.user;
-      }
-
-      // Update partner marker if coordinates are valid
-      if (partnerLocation && isValidCoordinate(partnerLocation.lat, partnerLocation.lng)) {
-        const pos = [partnerLocation.lat, partnerLocation.lng];
-        validMarkerFound = true;
-        
-        if (newMarkers.partner) {
-          newMarkers.partner.setLatLng(pos);
-        } else {
-          newMarkers.partner = L.marker(pos, { icon: partnerIcon })
-            .bindPopup(partnerName || "Partner")
-            .addTo(map);
+        // Kullanıcı görünümü aktif ise haritayı kullanıcı konumuna odakla
+        if (userView) {
+          map.setView(userLatLng, map.getZoom());
         }
-        
-        bounds.extend(pos);
-      } else if (newMarkers.partner) {
-        map.removeLayer(newMarkers.partner);
-        delete newMarkers.partner;
-      }
-
-      // Clear existing lines
-      if (newMarkers.line) {
-        map.removeLayer(newMarkers.line);
-        delete newMarkers.line;
       }
       
-      if (newMarkers.distance) {
-        map.removeLayer(newMarkers.distance);
-        delete newMarkers.distance;
+      // Partner marker'ını güncelle
+      if (partnerLocation) {
+        const partnerLatLng = [partnerLocation.latitude, partnerLocation.longitude];
+        
+        if (!markers.partner) {
+          // Partner markeri henüz oluşturulmadıysa oluştur
+          const partnerIcon = L.divIcon({
+            html: `<div class="map-marker partner-marker"><div class="marker-icon">
+                    <i class="fa-heart"></i></div><div class="marker-pulse"></div></div>`,
+            className: 'partner-marker-container',
+            iconSize: [40, 40],
+            iconAnchor: [20, 40],
+          });
+          
+          newMarkers.partner = L.marker(partnerLatLng, { 
+            icon: partnerIcon,
+            title: partnerName 
+          }).addTo(map);
+          
+          // Popupu ekle
+          newMarkers.partner.bindPopup(`<b>${partnerName}</b><br>Burada`);
+        } else {
+          // Varolan markeri güncelle
+          newMarkers.partner.setLatLng(partnerLatLng);
+        }
       }
-
-      // Draw line between markers only if both have valid positions
-      if (newMarkers.user && newMarkers.partner) {
-        const userPos = newMarkers.user.getLatLng();
-        const partnerPos = newMarkers.partner.getLatLng();
+      
+      // Eğer hem kullanıcı hem de partner konum varsa
+      if (userLocation && partnerLocation) {
+        // Polyline'ı güncelleyelim
+        const userLatLng = [userLocation.latitude, userLocation.longitude];
+        const partnerLatLng = [partnerLocation.latitude, partnerLocation.longitude];
         
-        // Create a line between markers
-        newMarkers.line = L.polyline([userPos, partnerPos], {
-          color: '#ff6b6b',
-          weight: 3,
-          opacity: 0.7,
-          dashArray: '10, 7',
-        }).addTo(map);
+        if (!markers.line) {
+          // Henüz çizgi oluşturulmadıysa oluştur
+          newMarkers.line = L.polyline([userLatLng, partnerLatLng], {
+            color: '#ff6b6b',
+            weight: 3,
+            opacity: 0.7,
+            dashArray: '10, 10'
+          }).addTo(map);
+          
+          // Her iki markeri de görünür yapmak için haritayı sınırla
+          const bounds = L.latLngBounds([userLatLng, partnerLatLng]);
+          map.fitBounds(bounds, { padding: [50, 50] });
+          
+        } else {
+          // Varolan çizgiyi güncelle
+          newMarkers.line.setLatLngs([userLatLng, partnerLatLng]);
+        }
         
-        // Add distance marker
-        const midPoint = L.latLng(
-          (userPos.lat + partnerPos.lat) / 2,
-          (userPos.lng + partnerPos.lng) / 2
-        );
+        // Mesafeyi hesapla
+        const distance = map.distance(userLatLng, partnerLatLng) / 1000; // km cinsinden
         
-        const distance = (userPos.distanceTo(partnerPos) / 1000).toFixed(1);
-        
-        const distanceIcon = L.divIcon({
-          html: `<div class="bg-white dark:bg-gray-800 text-primary px-2 py-1 rounded-full text-xs shadow-md">${distance} km</div>`,
-          className: 'distance-marker',
-          iconSize: [60, 20],
-          iconAnchor: [30, 10]
-        });
-        
-        newMarkers.distance = L.marker(midPoint, {
-          icon: distanceIcon,
-          interactive: false
-        }).addTo(map);
+        // Mesafe popup'ı
+        if (!markers.distanceMarker) {
+          // Orta nokta
+          const midPoint = [
+            (userLatLng[0] + partnerLatLng[0]) / 2,
+            (userLatLng[1] + partnerLatLng[1]) / 2
+          ];
+          
+          // Mesafe işaretçisi ekle
+          newMarkers.distanceMarker = L.marker(midPoint, { 
+            icon: L.divIcon({
+              html: `<div class="distance-bubble">${distance.toFixed(1)} km</div>`,
+              className: 'distance-bubble-container',
+              iconSize: [80, 30],
+              iconAnchor: [40, 15],
+            })
+          }).addTo(map);
+        } else {
+          // Mesafe işaretçisini güncelle
+          const midPoint = [
+            (userLatLng[0] + partnerLatLng[0]) / 2,
+            (userLatLng[1] + partnerLatLng[1]) / 2
+          ];
+          
+          newMarkers.distanceMarker.setLatLng(midPoint);
+          newMarkers.distanceMarker.setIcon(L.divIcon({
+            html: `<div class="distance-bubble">${distance.toFixed(1)} km</div>`,
+            className: 'distance-bubble-container',
+            iconSize: [80, 30],
+            iconAnchor: [40, 15],
+          }));
+        }
       }
-
-      // Adjust map view if we have valid markers
-      if (bounds.isValid() && validMarkerFound) {
-        map.fitBounds(bounds, { 
-          padding: [50, 50],
-          maxZoom: 16
-        });
-      }
-
+      
       setMarkers(newMarkers);
     } catch (err) {
       console.error("Error updating markers:", err);
     }
-  }, [map, userLocation, partnerLocation, userName, partnerName, markers]); // Added markers dependency
-
-  // Update location at regular intervals
+  }, [map, userLocation, partnerLocation, userName, partnerName, userView]);
+  
+  // Konum güncelleme işlemleri için useEffect
   useEffect(() => {
     if (!onLocationUpdate) return;
     
@@ -222,23 +222,60 @@ export default function MapComponent({ userLocation, partnerLocation, userName, 
     }, 30000);
     
     return () => clearInterval(updateInterval);
-  }, [onLocationUpdate]); // Removed updateLocationAndBattery dependency
+  }, [onLocationUpdate]);
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-full bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
-        <div className="text-red-500 text-center">
-          <p>{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg"
-          >
-            Yeniden Dene
-          </button>
+  // Ortala butonuna basıldığında konuma dön
+  const handleCenterClick = () => {
+    if (userLocation && mapRef.current) {
+      setUserView(true);
+      mapRef.current.setView(
+        [userLocation.latitude, userLocation.longitude], 
+        15, // Uygun bir zoom seviyesi
+        { animate: true }
+      );
+    }
+  };
+
+  if (!LeafletModule) return null;
+  
+  return (
+    <>
+      <div id="map" className="w-full h-full z-10"></div>
+      
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-black/80 z-20">
+          <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-sm text-center">
+            <div className="text-red-500 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Harita Yüklenemiyor</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">{error}</p>
+            <button
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+              onClick={() => window.location.reload()}
+            >
+              Yeniden Dene
+            </button>
+          </div>
         </div>
+      )}
+      
+      {/* Ortala butonu */}
+      <div className="absolute bottom-6 right-6 z-20">
+        <button 
+          onClick={handleCenterClick}
+          className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${
+            userView 
+              ? 'bg-primary text-white' 
+              : 'bg-white text-gray-700 hover:bg-gray-100'
+          }`}
+          title="Konumuma Dön"
+        >
+          <FaCrosshairs className="text-lg" />
+        </button>
       </div>
-    );
-  }
-
-  return <div id="map" style={{ width: "100%", height: "100%" }}></div>;
+    </>
+  );
 }
