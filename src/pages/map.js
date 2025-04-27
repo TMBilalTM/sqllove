@@ -70,7 +70,7 @@ export default function MapPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-        <div className="text-xl">Harita yükleniyor...</div>
+        <div className="text-xl">Harita yükleniyor....</div>
       </div>
     );
   }
