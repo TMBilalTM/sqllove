@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Image from "next/image";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
-import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserPlus, FaSignInAlt, FaMobile, FaShieldAlt, FaTachometerAlt } from "react-icons/fa";
+import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserPlus, FaSignInAlt, FaMobile, FaShieldAlt, FaTachometerAlt, FaPaperPlane } from "react-icons/fa";
 import Logo from "../components/Logo";
 import { getCurrentUser } from "../lib/api";
 
@@ -21,6 +21,13 @@ export default function Home() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  
+  // Chat messages for demo
+  const [chatMessages] = useState([
+    { id: 1, text: "Neredesin canım?", sender: "partner", time: "14:30" },
+    { id: 2, text: "Ofisteyim, 30 dakikaya çıkacağım", sender: "user", time: "14:31" },
+    { id: 3, text: "Tamam, seni bekliyorum ❤️", sender: "partner", time: "14:32" }
+  ]);
 
   // Check authentication status
   useEffect(() => {
@@ -123,33 +130,110 @@ export default function Home() {
             </div>
             
             <div className="lg:w-1/2 lg:pl-10 flex justify-center">
-              <div className="relative w-64 h-96 sm:w-80 sm:h-[450px]">
-                <div className="absolute inset-y-0 left-0 w-60 h-80 sm:w-72 sm:h-[400px] bg-gradient-to-r from-primary to-accent rounded-3xl shadow-xl transform -rotate-6"></div>
-                <div className="absolute inset-0 bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
-                  <div className="p-4 bg-primary text-white text-center">SQLLove</div>
-                  <div className="p-4">
-                    <div className="flex justify-between items-center mb-6">
-                      <div className="text-lg font-medium">Sevgilim</div>
-                      <div className="text-primary flex items-center gap-1">
-                        <FaBatteryThreeQuarters /> 85%
+              {/* UPDATED: Modern, Responsive Phone Mockup */}
+              <div className="relative">
+                {/* Phone frame with gradient border */}
+                <div className="phone-frame relative w-64 sm:w-72 md:w-80 aspect-[9/19] rounded-[2.5rem] p-1 bg-gradient-to-br from-primary to-accent shadow-xl">
+                  {/* Phone inner */}
+                  <div className="bg-white dark:bg-gray-800 w-full h-full rounded-[2.3rem] overflow-hidden flex flex-col">
+                    {/* Phone notch */}
+                    <div className="w-1/3 h-6 bg-gray-900 dark:bg-black mx-auto rounded-b-xl"></div>
+                    
+                    {/* App header */}
+                    <div className="p-3 bg-primary text-white text-center shadow-sm">
+                      <div className="flex justify-between items-center">
+                        <div className="text-xs">12:30</div>
+                        <div className="text-base font-medium">SQLLove</div>
+                        <div className="flex items-center text-xs">
+                          <FaBatteryThreeQuarters className="ml-1" />
+                        </div>
                       </div>
                     </div>
-                    <div className="bg-gray-100 dark:bg-gray-700 h-40 rounded-lg mb-4 flex items-center justify-center text-gray-400">
-                      [Harita Görünümü]
-                    </div>
-                    <div className="space-y-3">
-                      <div className="chat-bubble theirs">
-                        Neredesin canım?
+                    
+                    {/* App content */}
+                    <div className="flex-1 flex flex-col">
+                      {/* Partner info */}
+                      <div className="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-xs">
+                            AŞ
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">Aşkım</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">Çevrimiçi</div>
+                          </div>
+                        </div>
+                        <div className="text-primary flex items-center gap-1">
+                          <FaBatteryThreeQuarters /> <span className="text-xs">85%</span>
+                        </div>
                       </div>
-                      <div className="chat-bubble mine">
-                        Ofisteyim, 30 dakikaya çıkacağım
+                      
+                      {/* Map preview */}
+                      <div className="relative h-32 bg-blue-50 dark:bg-gray-700">
+                        {/* Map placeholder with markers */}
+                        <div className="absolute inset-0 bg-[url('/map-background.png')] bg-cover bg-center opacity-80 dark:opacity-50"></div>
+                        
+                        {/* User marker */}
+                        <div className="absolute top-1/3 left-1/4 text-blue-600 text-lg">
+                          <FaMapMarkerAlt className="animate-bounce" />
+                        </div>
+                        
+                        {/* Partner marker */}
+                        <div className="absolute bottom-1/3 right-1/3 text-red-500 text-lg">
+                          <FaHeart className="animate-pulse" />
+                        </div>
+                        
+                        {/* Distance line */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-white bg-primary/80 px-2 py-1 rounded-full">
+                          3.2 km
+                        </div>
                       </div>
-                      <div className="chat-bubble theirs">
-                        Tamam, seni bekliyorum ❤️
+                      
+                      {/* Chat messages */}
+                      <div className="flex-1 p-3 space-y-3 overflow-auto">
+                        {chatMessages.map(message => (
+                          <div 
+                            key={message.id}
+                            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div 
+                              className={`max-w-[80%] px-3 py-2 rounded-2xl ${
+                                message.sender === 'user' 
+                                  ? 'bg-primary text-white rounded-tr-none' 
+                                  : 'bg-gray-100 dark:bg-gray-700 rounded-tl-none'
+                              }`}
+                            >
+                              <p className="text-sm">{message.text}</p>
+                              <div className={`text-xs mt-1 text-right ${
+                                message.sender === 'user' 
+                                  ? 'text-white/80' 
+                                  : 'text-gray-500 dark:text-gray-400'
+                              }`}>
+                                {message.time}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Message input */}
+                      <div className="p-3 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                        <input 
+                          type="text" 
+                          placeholder="Mesaj yazın..." 
+                          className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm py-2 px-4 focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                        <button className="w-8 h-8 flex items-center justify-center rounded-full bg-primary text-white">
+                          <FaPaperPlane className="text-xs" />
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
+                
+                {/* Decorative elements */}
+                <div className="absolute -z-10 w-40 h-40 bg-primary/10 rounded-full -top-5 -right-10"></div>
+                <div className="absolute -z-10 w-32 h-32 bg-accent/10 rounded-full -bottom-8 -left-8"></div>
               </div>
             </div>
           </div>
@@ -225,9 +309,9 @@ export default function Home() {
           <div className="text-center text-gray-600 dark:text-gray-400">
             <p>© 2025 SQLLove - Sevgi Her Yerde</p>
             <div className="mt-3 flex justify-center gap-6">
-              <a href="#" className="hover:text-primary">Gizlilik</a>
-              <a href="#" className="hover:text-primary">Koşullar</a>
-              <a href="#" className="hover:text-primary">İletişim</a>
+              <Link href="/privacy" className="hover:text-primary transition-colors">Gizlilik</Link>
+              <Link href="/terms" className="hover:text-primary transition-colors">Koşullar</Link>
+              <Link href="/contact" className="hover:text-primary transition-colors">İletişim</Link>
             </div>
           </div>
         </div>
