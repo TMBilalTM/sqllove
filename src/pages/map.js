@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import { FaArrowLeft, FaBatteryThreeQuarters } from "react-icons/fa";
@@ -17,9 +17,37 @@ export default function MapPage() {
   const [user, setUser] = useState(null);
   const [partner, setPartner] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshInterval, setRefreshInterval] = useState(null);
+
+  // Function to fetch partner data
+  const fetchPartnerData = useCallback(async () => {
+    try {
+      const partnerData = await getPartnerInfo();
+      if (partnerData && partnerData.partner) {
+        setPartner(partnerData.partner);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Partner data fetch error:", err);
+      return false;
+    }
+  }, []);
+
+  // Handle location updates from the map component
+  const handleLocationUpdate = useCallback(async (locationData) => {
+    // Immediately fetch updated partner info after we update our location
+    if (locationData) {
+      try {
+        await fetchPartnerData();
+      } catch (err) {
+        console.error("Error fetching partner data after location update:", err);
+      }
+    }
+  }, [fetchPartnerData]);
 
   useEffect(() => {
-    // Kullanıcı ve partner bilgilerini al
+    // Initial data load
     async function fetchData() {
       try {
         const data = await getCurrentUser();
@@ -31,12 +59,11 @@ export default function MapPage() {
         
         setUser(data.user);
         
-        const partnerData = await getPartnerInfo();
+        // Get initial partner data
+        const hasPartner = await fetchPartnerData();
         
-        if (partnerData && partnerData.partner) {
-          setPartner(partnerData.partner);
-        } else {
-          // Partneri yoksa ana panoya yönlendir
+        if (!hasPartner) {
+          // No partner, redirect to dashboard
           router.push("/dashboard");
           return;
         }
@@ -50,38 +77,59 @@ export default function MapPage() {
 
     fetchData();
     
-    // Konum ve şarj durumu güncellemesi için timer
-    const updateInterval = setInterval(async () => {
-      try {
-        // Kullanıcının konumu ve şarj durumunu güncelle
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(async (position) => {
-            const { latitude, longitude } = position.coords;
-            
-            // Batarya seviyesini al (varsa)
-            let batteryLevel = null;
+    // Set up polling for partner updates
+    const interval = setInterval(() => {
+      console.log("Polling for partner updates...");
+      fetchPartnerData();
+    }, 15000); // Every 15 seconds
+    
+    setRefreshInterval(interval);
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [router, fetchPartnerData]);
+
+  // Initial location update on page load
+  useEffect(() => {
+    // Update user's location and battery on component mount
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          // Get battery level
+          let batteryLevel = null;
+          try {
             if ('getBattery' in navigator) {
               const battery = await navigator.getBattery();
               batteryLevel = Math.round(battery.level * 100);
             }
-            
-            // Konum ve batarya bilgilerini API'ye gönder
+          } catch (err) {
+            console.error("Battery API error:", err);
+          }
+          
+          console.log("Initial location update:", { latitude, longitude, batteryLevel });
+          
+          // Send location update to server
+          try {
             await updateLocationAndBattery(latitude, longitude, batteryLevel);
-            
-            // Partner bilgilerini güncelle
-            const partnerData = await getPartnerInfo();
-            if (partnerData && partnerData.partner) {
-              setPartner(partnerData.partner);
+            // Refetch user data to get updated coordinates
+            const userData = await getCurrentUser();
+            if (userData && userData.user) {
+              setUser(userData.user);
             }
-          });
-        }
-      } catch (err) {
-        console.error("Konum güncellenirken hata:", err);
-      }
-    }, 30000); // Her 30 saniyede bir güncelle
-    
-    return () => clearInterval(updateInterval);
-  }, [router]);
+          } catch (err) {
+            console.error("Location update error:", err);
+          }
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+        },
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -121,6 +169,7 @@ export default function MapPage() {
             partnerLocation={{ lat: partner.latitude, lng: partner.longitude }}
             userName={user.name}
             partnerName={partner.name}
+            onLocationUpdate={handleLocationUpdate}
           />
         ) : (
           <div className="h-full flex items-center justify-center flex-col gap-4">

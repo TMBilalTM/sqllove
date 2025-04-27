@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt } from "react-icons/fa";
+import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync } from "react-icons/fa";
 import Logo from "../components/Logo";
-import { getCurrentUser, linkPartner, logout, checkAuth } from "../lib/api";
+import { getCurrentUser, linkPartner, logout, updateLocationAndBattery } from "../lib/api";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -14,47 +14,101 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copySuccess, setCopySuccess] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Function to fetch all user and partner data
+  const fetchData = useCallback(async () => {
+    try {
+      console.log("Fetching user data...");
+      const data = await getCurrentUser();
+      
+      if (!data) {
+        router.push("/login");
+        return;
+      }
+      
+      setUser(data.user);
+      setPartnerCode(data.user.partnerCode);
+      
+      if (data.partner) {
+        setPartner(data.partner);
+      }
+      
+      return true;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  }, [router]);
+  
+  // Refresh data manually
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setTimeout(() => setRefreshing(false), 1000);  // Show refresh animation for at least 1 second
+  };
 
   useEffect(() => {
-    // Check if user is authenticated first
-    const isAuthenticated = checkAuth();
-    console.log("Dashboard auth check:", isAuthenticated);
-    
-    if (!isAuthenticated) {
-      console.log("User not authenticated, redirecting to login");
-      router.push("/login");
-      return;
-    }
-
-    // Fetch user data only if authenticated
-    async function fetchUserData() {
-      try {
-        console.log("Fetching user data...");
-        const data = await getCurrentUser();
-        console.log("User data response:", data);
-        
-        if (!data || !data.user) {
-          console.error("Failed to get user data");
-          router.push("/login");
-          return;
-        }
-        
-        setUser(data.user);
-        setPartnerCode(data.user.partnerCode);
-        
-        if (data.partner) {
-          setPartner(data.partner);
-        }
-      } catch (err) {
-        console.error("Error fetching user data:", err);
+    // Kullanıcı bilgilerini ve partner bilgilerini al
+    async function initialFetch() {
+      const success = await fetchData();
+      if (!success) {
         router.push("/login");
-      } finally {
-        setLoading(false);
+        return;
       }
+      setLoading(false);
     }
 
-    fetchUserData();
-  }, [router]);
+    initialFetch();
+    
+    // Konum ve şarj durumu güncellemesi için
+    const updateLocationData = async () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            
+            // Batarya seviyesini al (varsa)
+            let batteryLevel = null;
+            try {
+              if ('getBattery' in navigator) {
+                const battery = await navigator.getBattery();
+                batteryLevel = Math.round(battery.level * 100);
+              }
+            } catch (err) {
+              console.error("Battery API error:", err);
+            }
+            
+            console.log("Updating location and battery:", { latitude, longitude, batteryLevel });
+            
+            try {
+              await updateLocationAndBattery(latitude, longitude, batteryLevel);
+              // Refresh data after updating location
+              await fetchData();
+            } catch (err) {
+              console.error("Location update error:", err);
+            }
+          },
+          (error) => {
+            console.error("Geolocation error:", error);
+          },
+          { enableHighAccuracy: true }
+        );
+      }
+    };
+    
+    // Initial location update
+    updateLocationData();
+    
+    // Set up regular updates
+    const locationInterval = setInterval(updateLocationData, 60000); // Every minute
+    const dataInterval = setInterval(fetchData, 30000); // Refresh user/partner data every 30 seconds
+    
+    return () => {
+      clearInterval(locationInterval);
+      clearInterval(dataInterval);
+    };
+  }, [router, fetchData]);
 
   const handlePartnerCodeSubmit = async (e) => {
     e.preventDefault();
@@ -65,6 +119,8 @@ export default function Dashboard() {
       if (data.success) {
         setPartner(data.partner);
         setEnteredCode("");
+        // Refresh data after linking partner
+        await fetchData();
       } else {
         setError(data.message || "Partner bağlantısı başarısız oldu.");
       }
@@ -102,12 +158,21 @@ export default function Dashboard() {
       <header className="bg-white dark:bg-gray-800 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <Logo size="md" />
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <FaSignOutAlt /> Çıkış Yap
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={handleRefresh} 
+              className={`p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 ${refreshing ? 'animate-spin' : ''}`}
+              disabled={refreshing}
+            >
+              <FaSync />
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <FaSignOutAlt /> Çıkış Yap
+            </button>
+          </div>
         </div>
       </header>
 
@@ -182,7 +247,7 @@ export default function Dashboard() {
 
                 <div>
                   <h3 className="text-sm text-gray-500 dark:text-gray-400">Şarj Durumu</h3>
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-1">
                     <FaBatteryThreeQuarters className={`${
                       (partner.batteryLevel > 50) ? "text-green-500" : 
                       (partner.batteryLevel > 20) ? "text-yellow-500" : "text-red-500"
@@ -211,12 +276,23 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 h-64 flex items-center justify-center">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 h-64 flex flex-col justify-center">
               <div className="text-center">
                 <FaHeart className="text-5xl text-red-500 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
                   Partner ile bağlantınız aktif
                 </p>
+                
+                {user && user.batteryLevel && (
+                  <div className="flex items-center justify-center gap-1 mt-4">
+                    <span>Şarj durumunuz:</span>
+                    <FaBatteryThreeQuarters className={`${
+                      (user.batteryLevel > 50) ? "text-green-500" : 
+                      (user.batteryLevel > 20) ? "text-yellow-500" : "text-red-500"
+                    }`} />
+                    <span>{user.batteryLevel}%</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
