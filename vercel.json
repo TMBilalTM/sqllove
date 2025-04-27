@@ -11,6 +11,10 @@
   ],
   "routes": [
     {
+      "src": "/api/cors-proxy",
+      "dest": "/api/cors-proxy"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "https://kibrisquiz.com/api/$1"
     }

@@ -19,23 +19,43 @@ const apiRequest = async (endpoint, options = {}) => {
       credentials: 'include',
     };
 
+    console.log(`Making request to: ${url}`, { method: options.method || 'GET' });
+    
     const response = await fetch(url, config);
     
-    // Oturum hatalarını yakala
-    if (response.status === 401) {
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('authError'));
-        
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+    // Check if response is OK
+    if (!response.ok) {
+      console.error(`API request failed: ${response.status} ${response.statusText}`);
+      // Oturum hatalarını yakala
+      if (response.status === 401) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('authError'));
+          
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
         }
       }
     }
     
-    return response;
+    // Try to parse JSON response
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        const data = await response.json();
+        return { ok: response.ok, status: response.status, data };
+      } catch (err) {
+        console.error('Error parsing JSON response', err);
+        return { ok: false, status: response.status, error: 'Invalid JSON response' };
+      }
+    } else {
+      const text = await response.text();
+      console.error('Received non-JSON response:', text.substring(0, 100));
+      return { ok: false, status: response.status, error: 'Non-JSON response', text };
+    }
   } catch (error) {
-    console.error(`API isteği sırasında hata: ${endpoint}`, error);
-    throw error;
+    console.error(`API request error: ${endpoint}`, error);
+    return { ok: false, error: error.message };
   }
 };
 
@@ -48,7 +68,11 @@ export const login = async (email, password) => {
     body: JSON.stringify({ email, password }),
   });
   
-  return response.json();
+  if (!response.ok) {
+    return { success: false, message: response.error || 'Login failed' };
+  }
+  
+  return { success: true, ...response.data };
 };
 
 // Kullanıcı kaydı
@@ -58,7 +82,11 @@ export const register = async (name, email, password) => {
     body: JSON.stringify({ name, email, password }),
   });
   
-  return response.json();
+  if (!response.ok) {
+    return { success: false, message: response.error || 'Registration failed' };
+  }
+  
+  return { success: true, ...response.data };
 };
 
 // Çıkış yapma
@@ -67,7 +95,7 @@ export const logout = async () => {
     method: 'POST',
   });
   
-  return response.json();
+  return { success: true };
 };
 
 /* Kullanıcı API'leri */
@@ -80,7 +108,7 @@ export const getCurrentUser = async () => {
     return null;
   }
   
-  return response.json();
+  return response.data;
 };
 
 // Partner bilgilerini al
@@ -91,7 +119,7 @@ export const getPartnerInfo = async () => {
     return null;
   }
   
-  return response.json();
+  return response.data;
 };
 
 // Partner koduyla eşleşme
@@ -101,7 +129,11 @@ export const linkPartner = async (partnerCode) => {
     body: JSON.stringify({ partnerCode }),
   });
   
-  return response.json();
+  if (!response.ok) {
+    return { success: false, message: response.error || 'Partner linking failed' };
+  }
+  
+  return { success: true, ...response.data };
 };
 
 // Konum ve şarj durumunu güncelle
@@ -115,5 +147,9 @@ export const updateLocationAndBattery = async (latitude, longitude, batteryLevel
     }),
   });
   
-  return response.json();
+  if (!response.ok) {
+    return { success: false };
+  }
+  
+  return { success: true };
 };

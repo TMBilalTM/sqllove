@@ -1,55 +1,60 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
 /**
- * Kibrisquiz.com API için CORS proxy aAAsfyarlayıcı
- * Bu dosya, frontend'den gelen istekleri kibrisquiz.com'a ileterek CORS sorunlarını çözer
+ * CORS Proxy for Kibrisquiz.com API
  */
 export default async function handler(req, res) {
-  // Hangi kibrisquiz.com API endpoint'ine istek yapılacağı
+  // Get the target endpoint from query
   const { endpoint } = req.query;
   
   if (!endpoint) {
-    return res.status(400).json({ error: 'API endpoint belirtilmedi' });
+    return res.status(400).json({ error: 'API endpoint not specified' });
   }
 
   const targetUrl = `https://kibrisquiz.com/api/${endpoint}`;
   
   try {
-    // İstek yöntemini, headerları ve gövdeyi aktarma
     const fetchOptions = {
       method: req.method,
       headers: {
         'Content-Type': 'application/json',
       },
-      // Cookie'leri aktarma
-      credentials: 'include',
     };
     
-    // POST, PUT gibi istekler için body ekleme
+    // Include body for POST, PUT, PATCH requests
     if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
       fetchOptions.body = JSON.stringify(req.body);
     }
     
-    // Kibrisquiz API'sine istek yapma
+    // Make the request to the external API
     const response = await fetch(targetUrl, fetchOptions);
     
-    // API yanıt verisi
-    const data = await response.json();
+    // Get the response data
+    let data;
+    try {
+      data = await response.json();
+    } catch (e) {
+      data = { error: 'Invalid JSON response from API' };
+    }
     
-    // Yanıttaki statusCode ve cookie'leri aynen aktarma
+    // Copy status code from the API response
     res.status(response.status);
     
-    // Set-Cookie headerı varsa aktarma
+    // Forward Set-Cookie headers if present
     const setCookieHeader = response.headers.get('set-cookie');
     if (setCookieHeader) {
       res.setHeader('Set-Cookie', setCookieHeader);
     }
     
-    // API yanıtını döndürme
-    res.json(data);
+    // Return the API response
+    return res.json(data);
     
   } catch (error) {
-    console.error(`CORS Proxy hatası: ${targetUrl}`, error);
-    res.status(500).json({ error: 'Proxy hatası', message: error.message });
+    console.error(`CORS Proxy error for ${targetUrl}:`, error);
+    return res.status(500).json({ 
+      error: 'Proxy error', 
+      message: error.message,
+      endpoint: endpoint
+    });
   }
 }

@@ -40,7 +40,7 @@ try {
     
     // Kullanıcı ID'sini al
     $user_id = $payload['user_id'];
-    
+
     // Kullanıcının zaten bir partneri var mı kontrol et
     $stmt = $db->prepare("SELECT partner_id FROM users WHERE id = ?");
     $stmt->execute([$user_id]);
@@ -51,25 +51,25 @@ try {
         echo json_encode(['message' => 'Zaten bir partneriniz var']);
         exit;
     }
-    
+
     // Partner koduna sahip kullanıcıyı bul
     $stmt = $db->prepare("SELECT id, name FROM users WHERE partner_code = ?");
     $stmt->execute([$partnerCode]);
     $partner = $stmt->fetch();
-    
+
     if (!$partner) {
         http_response_code(404);
         echo json_encode(['message' => 'Bu kod ile kullanıcı bulunamadı']);
         exit;
     }
-    
+
     // Kendisinin kodunu girmeye çalışıyorsa engelle
     if ($partner['id'] == $user_id) {
         http_response_code(400);
         echo json_encode(['message' => 'Kendi partneriniz olamazsınız']);
         exit;
     }
-    
+
     // Partner ID'sini güncelle
     $db->beginTransaction();
     
