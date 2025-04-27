@@ -9,6 +9,15 @@ module.exports = {
     },
   },
   rules: {
-    // Add any custom rules here
+    // Disable the rule for unescaped entities since we're using Turkish characters and apostrophes
+    'react/no-unescaped-entities': 'off',
+    
+    // You can optionally add a better rule for React Hooks dependencies
+    'react-hooks/exhaustive-deps': [
+      'warn',
+      {
+        additionalHooks: '(useRecoilCallback|useRecoilTransaction_UNSTABLE)'
+      }
+    ]
   }
 };
