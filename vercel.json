@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next",
+      "config": {
+        "installCommand": "npm install --legacy-peer-deps"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://kibrisquiz.com/api/$1"
+    }
+  ],
+  "env": {
+    "API_BASE_URL": "https://kibrisquiz.com/api"
+  }
+}
