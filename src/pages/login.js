@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { FaSignInAlt, FaEnvelope, FaLock } from "react-icons/fa";
 import Logo from "../components/Logo";
-import { login } from "../lib/api";
+import { login, checkAuth } from "../lib/api";
 
 export default function Login() {
   const router = useRouter();
@@ -12,22 +12,33 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Kullanıcı zaten giriş yapmışsa dashboard'a yönlendir
+  useEffect(() => {
+    if (checkAuth()) {
+      router.push("/dashboard");
+    }
+  }, [router]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     
     try {
+      console.log("Giriş isteği gönderiliyor...");
       const data = await login(email, password);
+      console.log("Giriş yanıtı:", data);
       
       if (data.success) {
+        console.log("Giriş başarılı, yönlendiriliyor...");
         router.push("/dashboard");
       } else {
+        console.error("Giriş hatası:", data.message);
         setError(data.message || "Giriş başarısız oldu. Lütfen tekrar deneyin.");
       }
     } catch (err) {
+      console.error("Giriş işlemi sırasında hata:", err);
       setError("Bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
-      console.error(err);
     } finally {
       setLoading(false);
     }

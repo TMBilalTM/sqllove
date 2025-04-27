@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt } from "react-icons/fa";
 import Logo from "../components/Logo";
-import { getCurrentUser, linkPartner, logout } from "../lib/api";
+import { getCurrentUser, linkPartner, logout, checkAuth } from "../lib/api";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -16,12 +16,22 @@ export default function Dashboard() {
   const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
+    // Kimlik doğrulama kontrolü
+    if (!checkAuth()) {
+      console.log("Oturum doğrulanamadı, giriş sayfasına yönlendiriliyor");
+      router.push("/login");
+      return;
+    }
+
     // Kullanıcı bilgilerini ve partner bilgilerini al
     async function fetchUserData() {
       try {
+        console.log("Kullanıcı bilgileri alınıyor...");
         const data = await getCurrentUser();
+        console.log("Kullanıcı yanıtı:", data);
         
-        if (!data) {
+        if (!data || !data.user) {
+          console.error("Kullanıcı bilgileri alınamadı");
           router.push("/login");
           return;
         }
@@ -33,7 +43,7 @@ export default function Dashboard() {
           setPartner(data.partner);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Kullanıcı bilgileri hatası:", err);
       } finally {
         setLoading(false);
       }

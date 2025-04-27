@@ -51,7 +51,7 @@ try {
         'samesite' => $samesite
     ]);
     
-    // Kullanıcı bilgilerini döndür
+    // Kullanıcı bilgilerini ve token'ı döndür
     echo json_encode([
         'success' => true,
         'message' => 'Giriş başarılı',
@@ -59,7 +59,8 @@ try {
             'id' => $user['id'],
             'name' => $user['name'],
             'email' => $user['email'],
-            'partnerCode' => $user['partner_code']
+            'partnerCode' => $user['partner_code'],
+            'token' => $token  // Token'ı yanıt içinde de gönder
         ]
     ]);
     
