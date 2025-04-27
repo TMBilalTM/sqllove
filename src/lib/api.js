@@ -263,3 +263,59 @@ export const updateLocationAndBattery = async (latitude, longitude, batteryLevel
     return { success: false, error: error.message };
   }
 };
+
+/**
+ * Update user settings
+ * @param {Object} settings - Settings to update
+ * @param {boolean} settings.backgroundLocationEnabled - Enable background location tracking
+ * @returns {Promise<Object>} API response
+ */
+export const updateUserSettings = async (settings) => {
+  try {
+    const response = await apiRequest('/user/settings', {
+      method: 'POST',
+      body: JSON.stringify(settings),
+    });
+    
+    if (!response.ok) {
+      return { 
+        success: false, 
+        error: response.error || response.data?.message || 'Failed to update settings' 
+      };
+    }
+    
+    return { 
+      success: true, 
+      message: response.data?.message || "Settings updated successfully",
+      settings: response.data?.settings
+    };
+  } catch (error) {
+    console.error("Error updating settings:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Get user settings
+ * @returns {Promise<Object>} User settings
+ */
+export const getUserSettings = async () => {
+  try {
+    const response = await apiRequest('/user/settings');
+    
+    if (!response.ok) {
+      return { 
+        success: false, 
+        error: response.error || response.data?.message || 'Failed to get settings' 
+      };
+    }
+    
+    return { 
+      success: true,
+      settings: response.data?.settings
+    };
+  } catch (error) {
+    console.error("Error getting settings:", error);
+    return { success: false, error: error.message };
+  }
+};

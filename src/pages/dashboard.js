@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync } from "react-icons/fa";
 import Logo from "../components/Logo";
+import PermissionsManager from "../components/PermissionsManager";
 import { getCurrentUser, linkPartner, logout, updateLocationAndBattery } from "../lib/api";
 import { getBatteryLevel } from "../lib/battery";
 
@@ -287,6 +288,15 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
+            </div>
+            
+            <div className="col-span-1 md:col-span-2">
+              <PermissionsManager 
+                onSettingsUpdated={(settings) => {
+                  console.log("Settings updated:", settings);
+                  // Optional: You can show a success message here
+                }} 
+              />
             </div>
           </div>
         )}

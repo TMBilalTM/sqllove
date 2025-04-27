@@ -20,5 +20,14 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "permissions": [
+    "geolocation",
+    "background"
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "background": {
+    "service_worker": "location-worker.js"
+  }
 }
