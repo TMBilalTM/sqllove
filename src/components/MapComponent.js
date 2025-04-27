@@ -2,13 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { FaMapMarkerAlt, FaHeart, FaCrosshairs } from "react-icons/fa";
 import { updateLocationAndBattery } from "../lib/api";
 import { getBatteryLevel } from "../lib/battery";
-import dynamic from "next/dynamic";
-
-// Import Leaflet dynamically with no SSR
-const LeafletDynamic = dynamic(
-  () => import('./LeafletModule'),
-  { ssr: false }
-);
 
 export default function MapComponent({
   userLocation,
@@ -20,243 +13,290 @@ export default function MapComponent({
   const [map, setMap] = useState(null);
   const [markers, setMarkers] = useState({});
   const [error, setError] = useState(null);
-  const [userView, setUserView] = useState(true); // Kullanıcı görünümünü takip etmek için state
-  const [leafletLoaded, setLeafletLoaded] = useState(false);
-  
-  // Map referansını izlemek için ref
+  const [userView, setUserView] = useState(true);
   const mapRef = useRef(null);
-  
-  // Initialize Leaflet
+  const mapContainerRef = useRef(null);
+  const isLeafletLoaded = useRef(false);
+
+  // Initialize Leaflet when component mounts
   useEffect(() => {
-    // Check if we're on client-side
     if (typeof window === 'undefined') return;
-    
-    // Try to get L from window after LeafletModule has initialized it
-    const initLeaflet = () => {
-      if (window.L) {
-        setLeafletLoaded(true);
-      } else {
-        // If L is not available yet, try again in 100ms
-        setTimeout(initLeaflet, 100);
+    if (isLeafletLoaded.current) return;
+
+    const loadLeaflet = async () => {
+      try {
+        // Dynamic import of leaflet
+        const L = await import('leaflet');
+        
+        // Make sure CSS is loaded
+        await import('leaflet/dist/leaflet.css');
+        
+        // Fix icon paths
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+          iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+        });
+        
+        // Initialize map
+        if (mapContainerRef.current && !mapRef.current) {
+          console.log("Initializing map");
+          const mapInstance = L.map(mapContainerRef.current, {
+            center: [35.1856, 33.3823], // Default center (Cyprus)
+            zoom: 10,
+            layers: [
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              }),
+            ],
+            attributionControl: false
+          });
+          
+          // Disable drag and zoom handlers initially
+          mapInstance.on('dragstart', () => {
+            setUserView(false);
+          });
+
+          mapRef.current = mapInstance;
+          setMap(mapInstance);
+          window.mapInstance = mapInstance; // For debugging
+          isLeafletLoaded.current = true;
+        }
+      } catch (error) {
+        console.error("Error loading Leaflet:", error);
+        setError("Harita yüklenemedi. Lütfen sayfayı yenileyin.");
       }
     };
     
-    initLeaflet();
-  }, []);
-  
-  // Initialize map when Leaflet is loaded
-  useEffect(() => {
-    if (!leafletLoaded || !window.L) return;
-    if (map) return;
+    loadLeaflet();
     
-    try {
-      console.log("Initializing map");
-      
-      // Get Leaflet from window
-      const L = window.L;
-      
-      // Create map with default center
-      const mapInstance = L.map('map', {
-        center: [35.1856, 33.3823], // Default center (Cyprus)
-        zoom: 10,
-        layers: [
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          }),
-        ]
-      });
-      
-      // Harita hareket ettirildiğinde otomatik takibi durdur
-      mapInstance.on('dragstart', () => {
-        setUserView(false);
-      });
-      
-      // Harita referansını kaydet
-      mapRef.current = mapInstance;
-      setMap(mapInstance);
-    } catch (err) {
-      console.error("Error initializing map:", err);
-      setError("Harita yüklenirken bir hata oluştu");
-    }
-  }, [leafletLoaded, map]);
+    return () => {
+      // Cleanup when component unmounts
+      if (mapRef.current) {
+        console.log("Removing map");
+        mapRef.current.remove();
+        mapRef.current = null;
+        isLeafletLoaded.current = false;
+      }
+    };
+  }, []);
   
   // Update markers when location changes
   useEffect(() => {
-    if (!map || !leafletLoaded || !window.L) return;
-
-    try {
-      const L = window.L;
-      const newMarkers = { ...markers };
+    const updateMarkers = async () => {
+      if (!mapRef.current) return;
       
-      // Kullanıcı marker'ını güncelle
-      if (userLocation) {
-        const userLatLng = [userLocation.latitude, userLocation.longitude];
+      try {
+        const L = await import('leaflet');
+        const newMarkers = {...markers};
         
-        if (!markers.user) {
-          // Kullanıcı markeri henüz oluşturulmadıysa oluştur
-          const userIcon = L.divIcon({
-            html: `<div class="map-marker user-marker"><div class="marker-icon">
-                    <i class="fa fa-map-marker-alt"></i></div><div class="marker-pulse"></div></div>`,
-            className: 'user-marker-container',
-            iconSize: [40, 40],
-            iconAnchor: [20, 40],
-          });
+        // Update or create user marker
+        if (userLocation) {
+          const userLatLng = [userLocation.latitude, userLocation.longitude];
           
-          newMarkers.user = L.marker(userLatLng, { 
-            icon: userIcon,
-            title: userName 
-          }).addTo(map);
+          if (!markers.user) {
+            // Create user marker with custom icon
+            const userIcon = L.divIcon({
+              html: `
+                <div class="flex justify-center items-center">
+                  <div class="relative">
+                    <div class="w-8 h-8 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-white">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                      </svg>
+                    </div>
+                    <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-green-400 border border-white"></div>
+                  </div>
+                </div>
+              `,
+              className: 'custom-marker-icon',
+              iconSize: [32, 32],
+              iconAnchor: [16, 32],
+            });
+            
+            newMarkers.user = L.marker(userLatLng, { 
+              icon: userIcon,
+              title: userName
+            }).addTo(mapRef.current);
+            
+            newMarkers.user.bindTooltip(userName, {
+              permanent: false,
+              direction: 'top',
+              offset: [0, -32]
+            });
+          } else {
+            // Update existing marker
+            newMarkers.user.setLatLng(userLatLng);
+          }
           
-          // Popupu ekle
-          newMarkers.user.bindPopup(`<b>${userName}</b><br>Burada`);
-        } else {
-          // Varolan markeri güncelle
-          newMarkers.user.setLatLng(userLatLng);
+          // Center map on user location if userView is true
+          if (userView) {
+            mapRef.current.setView(userLatLng, mapRef.current.getZoom());
+          }
         }
         
-        // Kullanıcı görünümü aktif ise haritayı kullanıcı konumuna odakla
-        if (userView) {
-          map.setView(userLatLng, map.getZoom());
-        }
-      }
-      
-      // Partner marker'ını güncelle
-      if (partnerLocation) {
-        const partnerLatLng = [partnerLocation.latitude, partnerLocation.longitude];
-        
-        if (!markers.partner) {
-          // Partner markeri henüz oluşturulmadıysa oluştur
-          const partnerIcon = L.divIcon({
-            html: `<div class="map-marker partner-marker"><div class="marker-icon">
-                    <i class="fa fa-heart"></i></div><div class="marker-pulse"></div></div>`,
-            className: 'partner-marker-container',
-            iconSize: [40, 40],
-            iconAnchor: [20, 40],
-          });
+        // Update or create partner marker
+        if (partnerLocation) {
+          const partnerLatLng = [partnerLocation.latitude, partnerLocation.longitude];
           
-          newMarkers.partner = L.marker(partnerLatLng, { 
-            icon: partnerIcon,
-            title: partnerName 
-          }).addTo(map);
-          
-          // Popupu ekle
-          newMarkers.partner.bindPopup(`<b>${partnerName}</b><br>Burada`);
-        } else {
-          // Varolan markeri güncelle
-          newMarkers.partner.setLatLng(partnerLatLng);
-        }
-      }
-      
-      // Eğer hem kullanıcı hem de partner konum varsa
-      if (userLocation && partnerLocation) {
-        // Polyline'ı güncelleyelim
-        const userLatLng = [userLocation.latitude, userLocation.longitude];
-        const partnerLatLng = [partnerLocation.latitude, partnerLocation.longitude];
-        
-        if (!markers.line) {
-          // Henüz çizgi oluşturulmadıysa oluştur
-          newMarkers.line = L.polyline([userLatLng, partnerLatLng], {
-            color: '#ff6b6b',
-            weight: 3,
-            opacity: 0.7,
-            dashArray: '10, 10'
-          }).addTo(map);
-          
-          // Her iki markeri de görünür yapmak için haritayı sınırla
-          const bounds = L.latLngBounds([userLatLng, partnerLatLng]);
-          map.fitBounds(bounds, { padding: [50, 50] });
-          
-        } else {
-          // Varolan çizgiyi güncelle
-          newMarkers.line.setLatLngs([userLatLng, partnerLatLng]);
+          if (!markers.partner) {
+            // Create partner marker with custom icon
+            const partnerIcon = L.divIcon({
+              html: `
+                <div class="flex justify-center items-center">
+                  <div class="w-8 h-8 rounded-full bg-red-500 border-2 border-white flex items-center justify-center text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+              `,
+              className: 'custom-marker-icon',
+              iconSize: [32, 32],
+              iconAnchor: [16, 32],
+            });
+            
+            newMarkers.partner = L.marker(partnerLatLng, {
+              icon: partnerIcon,
+              title: partnerName
+            }).addTo(mapRef.current);
+            
+            newMarkers.partner.bindTooltip(partnerName, {
+              permanent: false,
+              direction: 'top',
+              offset: [0, -32]
+            });
+          } else {
+            // Update existing marker
+            newMarkers.partner.setLatLng(partnerLatLng);
+          }
         }
         
-        // Mesafeyi hesapla
-        const distance = map.distance(userLatLng, partnerLatLng) / 1000; // km cinsinden
-        
-        // Mesafe popup'ı
-        if (!markers.distanceMarker) {
-          // Orta nokta
+        // Create or update connection line and distance
+        if (userLocation && partnerLocation) {
+          const userLatLng = [userLocation.latitude, userLocation.longitude];
+          const partnerLatLng = [partnerLocation.latitude, partnerLocation.longitude];
+          
+          if (!markers.line) {
+            newMarkers.line = L.polyline([userLatLng, partnerLatLng], {
+              color: '#ff6b6b',
+              weight: 3,
+              opacity: 0.7,
+              dashArray: '10, 10',
+            }).addTo(mapRef.current);
+            
+            // Fit map to show both markers
+            const bounds = L.latLngBounds([userLatLng, partnerLatLng]);
+            mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+          } else {
+            newMarkers.line.setLatLngs([userLatLng, partnerLatLng]);
+          }
+          
+          // Calculate distance between points
+          const distance = mapRef.current.distance(userLatLng, partnerLatLng) / 1000; // convert to km
+          
+          // Add or update distance label
           const midPoint = [
             (userLatLng[0] + partnerLatLng[0]) / 2,
             (userLatLng[1] + partnerLatLng[1]) / 2
           ];
           
-          // Mesafe işaretçisi ekle
-          newMarkers.distanceMarker = L.marker(midPoint, { 
-            icon: L.divIcon({
-              html: `<div class="distance-bubble">${distance.toFixed(1)} km</div>`,
-              className: 'distance-bubble-container',
-              iconSize: [80, 30],
-              iconAnchor: [40, 15],
-            })
-          }).addTo(map);
-        } else {
-          // Mesafe işaretçisini güncelle
-          const midPoint = [
-            (userLatLng[0] + partnerLatLng[0]) / 2,
-            (userLatLng[1] + partnerLatLng[1]) / 2
-          ];
-          
-          newMarkers.distanceMarker.setLatLng(midPoint);
-          newMarkers.distanceMarker.setIcon(L.divIcon({
-            html: `<div class="distance-bubble">${distance.toFixed(1)} km</div>`,
-            className: 'distance-bubble-container',
-            iconSize: [80, 30],
-            iconAnchor: [40, 15],
-          }));
+          if (!markers.distance) {
+            const distanceIcon = L.divIcon({
+              html: `
+                <div class="px-3 py-1 rounded-full bg-primary text-white text-xs font-medium shadow-md">
+                  ${distance.toFixed(1)} km
+                </div>
+              `,
+              className: 'distance-marker',
+              iconSize: [60, 24],
+              iconAnchor: [30, 12],
+            });
+            
+            newMarkers.distance = L.marker(midPoint, {
+              icon: distanceIcon,
+              interactive: false
+            }).addTo(mapRef.current);
+          } else {
+            newMarkers.distance.setLatLng(midPoint);
+            
+            // Update the distance text
+            const distanceIcon = L.divIcon({
+              html: `
+                <div class="px-3 py-1 rounded-full bg-primary text-white text-xs font-medium shadow-md">
+                  ${distance.toFixed(1)} km
+                </div>
+              `,
+              className: 'distance-marker',
+              iconSize: [60, 24],
+              iconAnchor: [30, 12],
+            });
+            
+            newMarkers.distance.setIcon(distanceIcon);
+          }
         }
+        
+        setMarkers(newMarkers);
+        
+      } catch (error) {
+        console.error("Error updating markers:", error);
       }
-      
-      setMarkers(newMarkers);
-    } catch (err) {
-      console.error("Error updating markers:", err);
-    }
-  }, [map, leafletLoaded, userLocation, partnerLocation, userName, partnerName, markers, userView]);
-
-  // Konum güncelleme işlemleri
+    };
+    
+    updateMarkers();
+  }, [userLocation, partnerLocation, userName, partnerName, markers, userView]);
+  
+  // Handle location updates at regular intervals
   useEffect(() => {
     if (!onLocationUpdate) return;
     
     const updateInterval = setInterval(async () => {
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const { latitude, longitude } = position.coords;
-            const batteryLevel = await getBatteryLevel();
-            
-            try {
-              await updateLocationAndBattery(latitude, longitude, batteryLevel);
-              onLocationUpdate({ latitude, longitude, batteryLevel });
-            } catch (err) {
-              console.error("Error updating location:", err);
-            }
-          },
-          (error) => console.error("Geolocation error:", error),
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
+        try {
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const { latitude, longitude } = position.coords;
+              const batteryLevel = await getBatteryLevel();
+              
+              try {
+                await updateLocationAndBattery(latitude, longitude, batteryLevel);
+                onLocationUpdate({ latitude, longitude, batteryLevel });
+              } catch (err) {
+                console.error("Error updating location:", err);
+              }
+            },
+            (error) => console.error("Geolocation error:", error),
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          );
+        } catch (error) {
+          console.error("Geolocation not supported:", error);
+        }
       }
     }, 30000);
     
     return () => clearInterval(updateInterval);
   }, [onLocationUpdate]);
-
-  // Ortala butonuna basıldığında konuma dön
+  
+  // Handle center button click
   const handleCenterClick = () => {
-    if (userLocation && mapRef.current) {
-      setUserView(true);
-      mapRef.current.setView(
-        [userLocation.latitude, userLocation.longitude], 
-        15, // Uygun bir zoom seviyesi
-        { animate: true }
-      );
-    }
+    if (!userLocation || !mapRef.current) return;
+    
+    setUserView(true);
+    mapRef.current.setView(
+      [userLocation.latitude, userLocation.longitude],
+      15, // Appropriate zoom level
+      { animate: true }
+    );
   };
 
   return (
     <>
-      <LeafletDynamic />
-      <div id="map" className="w-full h-full z-10"></div>
+      <div 
+        ref={mapContainerRef}
+        className="w-full h-full z-10"
+        style={{ height: '100%', width: '100%' }}
+      ></div>
       
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-black/80 z-20">
@@ -278,7 +318,7 @@ export default function MapComponent({
         </div>
       )}
       
-      {/* Ortala butonu */}
+      {/* Center button */}
       <div className="absolute bottom-6 right-6 z-20">
         <button 
           onClick={handleCenterClick}

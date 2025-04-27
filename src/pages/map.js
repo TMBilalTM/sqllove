@@ -26,16 +26,16 @@ export default function MapPage() {
           router.push('/login');
           return;
         }
-        
+
         setUser(userData.user);
-        
+
         if (userData.partner) {
           setPartner(userData.partner);
         } else {
           router.push('/dashboard');
           return;
         }
-        
+
       } catch (err) {
         console.error('Auth check error:', err);
         setError('Kullanıcı bilgileri alınamadı');
@@ -50,7 +50,7 @@ export default function MapPage() {
   // Veriyi yenile
   const handleRefresh = async () => {
     if (refreshing) return;
-    
+
     try {
       setRefreshing(true);
       const userData = await getCurrentUser();
@@ -102,7 +102,7 @@ export default function MapPage() {
         </div>
       </header>
 
-      <main className="flex-1 relative">
+      <main className="flex-1 relative" style={{ height: 'calc(100vh - 56px)' }}>
         {error ? (
           <div className="h-full flex items-center justify-center">
             <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md text-center">

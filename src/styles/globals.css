@@ -214,17 +214,50 @@ input:focus, textarea:focus, select:focus {
 
 @keyframes pulse {
   0% {
-    transform: scale(0.9);
-    opacity: 1;
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(66, 153, 225, 0.7);
   }
+  
   70% {
-    transform: scale(1.3);
-    opacity: 0;
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(66, 153, 225, 0);
   }
+  
   100% {
-    transform: scale(0.9);
-    opacity: 0;
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(66, 153, 225, 0);
   }
+}
+
+/* Map Styles */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+}
+
+.custom-marker-icon {
+  background: none;
+  border: none;
+}
+
+.distance-marker {
+  background: none;
+  border: none;
+}
+
+.user-marker {
+  position: relative;
+}
+
+.user-marker::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  animation: pulse 2s infinite;
 }
 
 .distance-bubble {
