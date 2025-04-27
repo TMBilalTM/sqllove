@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync } from "react-icons/fa";
 import Logo from "../components/Logo";
 import { getCurrentUser, linkPartner, logout, updateLocationAndBattery } from "../lib/api";
+import { getBatteryLevel } from "../lib/battery";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -68,16 +69,8 @@ export default function Dashboard() {
           async (position) => {
             const { latitude, longitude } = position.coords;
             
-            // Batarya seviyesini al (varsa)
-            let batteryLevel = null;
-            try {
-              if ('getBattery' in navigator) {
-                const battery = await navigator.getBattery();
-                batteryLevel = Math.round(battery.level * 100);
-              }
-            } catch (err) {
-              console.error("Battery API error:", err);
-            }
+            // Get battery from our utility function
+            const batteryLevel = await getBatteryLevel();
             
             console.log("Updating location and battery:", { latitude, longitude, batteryLevel });
             
@@ -92,7 +85,7 @@ export default function Dashboard() {
           (error) => {
             console.error("Geolocation error:", error);
           },
-          { enableHighAccuracy: true }
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
       }
     };

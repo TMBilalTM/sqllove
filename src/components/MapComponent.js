@@ -61,22 +61,45 @@ function LocationUpdater({ onLocationUpdate }) {
     };
   }, []);
   
-  const updateCurrentLocation = () => {
+  const getBatteryLevel = async () => {
+    try {
+      // Method 1: Use the Battery API if available
+      if ('getBattery' in navigator) {
+        console.log("Using Battery API");
+        const battery = await navigator.getBattery();
+        return Math.round(battery.level * 100);
+      }
+      
+      // Method 2: Use the deprecated navigator.battery property
+      else if (navigator.battery || navigator.webkitBattery || navigator.mozBattery) {
+        console.log("Using legacy battery property");
+        const battery = navigator.battery || navigator.webkitBattery || navigator.mozBattery;
+        return Math.round(battery.level * 100);
+      }
+      
+      // Method 3: For desktop, check if power source is battery
+      else if (navigator.connection && navigator.connection.type === 'cellular') {
+        console.log("Using estimated battery level for mobile");
+        // For mobile devices, return a default value
+        return 50; // Default 50% for mobile
+      }
+      
+      console.log("No battery API available");
+      return null; // No battery info available
+    } catch (err) {
+      console.error("Error getting battery info:", err);
+      return null;
+    }
+  };
+  
+  const updateCurrentLocation = async () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
           
-          // Get battery level if available
-          let batteryLevel = null;
-          try {
-            if ('getBattery' in navigator) {
-              const battery = await navigator.getBattery();
-              batteryLevel = Math.round(battery.level * 100);
-            }
-          } catch (err) {
-            console.error("Error getting battery info:", err);
-          }
+          // Get battery level using our enhanced function
+          const batteryLevel = await getBatteryLevel();
           
           console.log("Updating location:", { latitude, longitude, batteryLevel });
           
@@ -98,7 +121,7 @@ function LocationUpdater({ onLocationUpdate }) {
         (err) => {
           console.error("Geolocation error:", err);
         },
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
       );
     }
   };

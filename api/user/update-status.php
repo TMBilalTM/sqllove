@@ -30,12 +30,17 @@ $latitude = $data['latitude'] ?? null;
 $longitude = $data['longitude'] ?? null;
 $batteryLevel = $data['batteryLevel'] ?? null;
 
-// Gelen verinin geçerliliğini kontrol et
-if (($latitude === null || $longitude === null) && $batteryLevel === null) {
+// Log the request
+error_log("Update Status Request - Lat: $latitude, Lng: $longitude, Battery: $batteryLevel");
+
+// Gelen verinin geçerliliğini kontrol et - sadece konum güncellemesine izin ver
+if ($latitude === null || $longitude === null) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'En az bir değer güncellenmelidir (konum veya batarya)']);
+    echo json_encode(['success' => false, 'message' => 'Konum bilgisi gereklidir']);
     exit;
 }
+
+// Battery level NULL olabilir, bu durumda sadece konum güncellenir
 
 try {
     // Token'ı doğrula
