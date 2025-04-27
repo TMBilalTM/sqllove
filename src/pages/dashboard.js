@@ -6,6 +6,7 @@ import Logo from "../components/Logo";
 import PermissionsManager from "../components/PermissionsManager";
 import { getCurrentUser, linkPartner, logout, updateLocationAndBattery } from "../lib/api";
 import { getBatteryLevel } from "../lib/battery";
+import { registerLocationWorker, getLocationWorker, getTrackingStatus } from "../lib/serviceWorkerBridge";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const [error, setError] = useState("");
   const [copySuccess, setCopySuccess] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [backgroundActive, setBackgroundActive] = useState(false);
 
   // Function to fetch all user and partner data
   const fetchData = useCallback(async () => {
@@ -97,6 +99,35 @@ export default function Dashboard() {
     // Set up regular updates
     const locationInterval = setInterval(updateLocationData, 60000); // Every minute
     const dataInterval = setInterval(fetchData, 30000); // Refresh user/partner data every 30 seconds
+    
+    // Check if background tracking was previously enabled
+    const isBackgroundEnabled = localStorage.getItem('background_tracking_enabled') === 'true';
+    
+    if (isBackgroundEnabled) {
+      // Check if the service worker is already running
+      const checkServiceWorker = async () => {
+        const registration = await getLocationWorker();
+        
+        if (registration) {
+          try {
+            const status = await getTrackingStatus();
+            setBackgroundActive(status.isTracking);
+          } catch (err) {
+            console.error("Error checking tracking status:", err);
+          }
+        } else if (isBackgroundEnabled) {
+          // Background was enabled but worker isn't running, try to restore it
+          try {
+            await registerLocationWorker();
+            setBackgroundActive(true);
+          } catch (err) {
+            console.error("Error registering background location worker:", err);
+          }
+        }
+      };
+      
+      checkServiceWorker();
+    }
     
     return () => {
       clearInterval(locationInterval);
@@ -294,7 +325,9 @@ export default function Dashboard() {
               <PermissionsManager 
                 onSettingsUpdated={(settings) => {
                   console.log("Settings updated:", settings);
-                  // Optional: You can show a success message here
+                  if ('backgroundLocationEnabled' in settings) {
+                    setBackgroundActive(settings.backgroundLocationEnabled);
+                  }
                 }} 
               />
             </div>

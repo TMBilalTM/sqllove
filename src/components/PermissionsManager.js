@@ -1,23 +1,71 @@
 import { useState, useEffect } from 'react';
-import { FaLocationArrow, FaBatteryThreeQuarters, FaCheck, FaTimes } from 'react-icons/fa';
-import { updateUserSettings } from '../lib/api';
+import { FaLocationArrow, FaBatteryThreeQuarters, FaCheck, FaTimes, FaBell } from 'react-icons/fa';
+import { updateUserSettings, getUserSettings } from '../lib/api';
 
 export default function PermissionsManager({ onSettingsUpdated }) {
   const [permissionStatus, setPermissionStatus] = useState({
     location: 'unknown',
     background: 'unknown',
-    battery: 'unknown'
+    battery: 'unknown',
+    notification: 'unknown'
   });
   
-  const [backgroundEnabled, setBackgroundEnabled] = useState(false);
+  const [settings, setSettings] = useState({
+    backgroundLocationEnabled: false,
+    showBackgroundNotification: true
+  });
+  
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [registrationStatus, setRegistrationStatus] = useState('idle');
+  const [worker, setWorker] = useState(null);
 
-  // Check existing permissions on component mount
+  // Check existing permissions and load settings on component mount
   useEffect(() => {
-    checkPermissions();
+    const initializeComponent = async () => {
+      await checkPermissions();
+      await loadUserSettings();
+      
+      // Get service worker registration
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.getRegistration('/location-worker.js');
+          if (registration) {
+            setWorker(registration);
+          }
+        } catch (err) {
+          console.error('Error getting service worker registration:', err);
+        }
+      }
+    };
+    
+    initializeComponent();
   }, []);
+  
+  // Load user settings from API
+  const loadUserSettings = async () => {
+    try {
+      const response = await getUserSettings();
+      
+      if (response.success && response.settings) {
+        setSettings({
+          backgroundLocationEnabled: response.settings.backgroundLocationEnabled || false,
+          showBackgroundNotification: 
+            response.settings.showBackgroundNotification !== undefined 
+              ? response.settings.showBackgroundNotification 
+              : true
+        });
+        
+        // Store background tracking setting in localStorage
+        localStorage.setItem(
+          'background_tracking_enabled', 
+          response.settings.backgroundLocationEnabled ? 'true' : 'false'
+        );
+      }
+    } catch (err) {
+      console.error('Error loading user settings:', err);
+      setError('Ayarlar yüklenemedi.');
+    }
+  };
   
   // Function to check current permissions
   const checkPermissions = async () => {
@@ -59,15 +107,91 @@ export default function PermissionsManager({ onSettingsUpdated }) {
       batteryStatus = 'denied';
     }
     
+    // Notification permission
+    let notificationStatus = 'unknown';
+    try {
+      if ('Notification' in window) {
+        notificationStatus = Notification.permission;
+      } else {
+        notificationStatus = 'unsupported';
+      }
+    } catch (error) {
+      console.error('Error checking notification permission:', error);
+    }
+    
     setPermissionStatus({
       location: locationStatus,
       background: backgroundStatus,
-      battery: batteryStatus
+      battery: batteryStatus,
+      notification: notificationStatus
     });
+  };
+  
+  // Request notification permission
+  const requestNotificationPermission = async () => {
+    try {
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        setPermissionStatus(prev => ({...prev, notification: permission}));
+        return permission === 'granted';
+      }
+      return false;
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+      return false;
+    }
+  };
+  
+  // Toggle background notification
+  const toggleBackgroundNotification = async () => {
+    const newValue = !settings.showBackgroundNotification;
+    setSaving(true);
     
-    // Set background enabled based on stored preference
-    const storedPreference = localStorage.getItem('background_tracking_enabled');
-    setBackgroundEnabled(storedPreference === 'true');
+    try {
+      // If enabling notifications, ensure we have permission
+      if (newValue && permissionStatus.notification !== 'granted') {
+        const granted = await requestNotificationPermission();
+        if (!granted) {
+          setError('Bildirim izni olmadan arkaplan bildirimleri gösterilemez.');
+          setSaving(false);
+          return;
+        }
+      }
+      
+      // Update the setting in our state
+      setSettings(prev => ({
+        ...prev,
+        showBackgroundNotification: newValue
+      }));
+      
+      // Update the setting on the server
+      await updateUserSettings({
+        showBackgroundNotification: newValue
+      });
+      
+      // If we have an active service worker, tell it about the new setting
+      if (worker && worker.active) {
+        worker.active.postMessage({
+          type: 'UPDATE_NOTIFICATION_SETTING',
+          showNotification: newValue
+        });
+      }
+      
+      if (onSettingsUpdated) {
+        onSettingsUpdated({ showBackgroundNotification: newValue });
+      }
+    } catch (error) {
+      console.error('Error toggling background notification:', error);
+      setError('Bildirim ayarları güncellenirken bir hata oluştu.');
+      
+      // Revert the state change
+      setSettings(prev => ({
+        ...prev,
+        showBackgroundNotification: !newValue
+      }));
+    } finally {
+      setSaving(false);
+    }
   };
   
   // Request location permission
@@ -91,7 +215,7 @@ export default function PermissionsManager({ onSettingsUpdated }) {
   
   // Toggle background location tracking
   const toggleBackgroundTracking = async () => {
-    const newValue = !backgroundEnabled;
+    const newValue = !settings.backgroundLocationEnabled;
     setSaving(true);
     
     try {
@@ -104,9 +228,17 @@ export default function PermissionsManager({ onSettingsUpdated }) {
       
       // Register or unregister the service worker
       if (newValue) {
-        await registerLocationWorker();
+        // If enabling background tracking and notifications are enabled,
+        // make sure we have notification permission
+        if (settings.showBackgroundNotification && permissionStatus.notification !== 'granted') {
+          await requestNotificationPermission();
+        }
+        
+        const registration = await registerLocationWorker();
+        setWorker(registration);
       } else {
         await unregisterLocationWorker();
+        setWorker(null);
       }
       
       // Update server setting
@@ -115,7 +247,11 @@ export default function PermissionsManager({ onSettingsUpdated }) {
       });
       
       // Update local state
-      setBackgroundEnabled(newValue);
+      setSettings(prev => ({
+        ...prev,
+        backgroundLocationEnabled: newValue
+      }));
+      
       localStorage.setItem('background_tracking_enabled', newValue.toString());
       
       if (onSettingsUpdated) {
@@ -123,7 +259,13 @@ export default function PermissionsManager({ onSettingsUpdated }) {
       }
     } catch (error) {
       console.error('Error toggling background tracking:', error);
-      setError('Ayarlar güncellenirken bir hata oluştu.');
+      setError('Arkaplan konum izleme ayarı güncellenirken bir hata oluştu.');
+      
+      // Revert the state change
+      setSettings(prev => ({
+        ...prev,
+        backgroundLocationEnabled: !newValue
+      }));
     } finally {
       setSaving(false);
     }
@@ -136,23 +278,25 @@ export default function PermissionsManager({ onSettingsUpdated }) {
     }
     
     try {
-      setRegistrationStatus('registering');
-      
       // Register the service worker
       const registration = await navigator.serviceWorker.register('/location-worker.js', {
         scope: '/'
       });
       
-      // Start tracking
-      registration.active.postMessage({
-        type: 'START_TRACKING'
-      });
+      // Wait for the service worker to be ready
+      await navigator.serviceWorker.ready;
       
-      setRegistrationStatus('registered');
+      // Start tracking
+      if (registration.active) {
+        registration.active.postMessage({
+          type: 'START_TRACKING',
+          showNotification: settings.showBackgroundNotification
+        });
+      }
+      
       setPermissionStatus(prev => ({...prev, background: 'granted'}));
       return registration;
     } catch (error) {
-      setRegistrationStatus('failed');
       console.error('Service worker registration failed:', error);
       throw error;
     }
@@ -166,9 +310,11 @@ export default function PermissionsManager({ onSettingsUpdated }) {
       const registration = await navigator.serviceWorker.getRegistration('/location-worker.js');
       if (registration) {
         // Stop tracking
-        registration.active.postMessage({
-          type: 'STOP_TRACKING'
-        });
+        if (registration.active) {
+          registration.active.postMessage({
+            type: 'STOP_TRACKING'
+          });
+        }
         
         // Unregister the worker
         await registration.unregister();
@@ -233,7 +379,7 @@ export default function PermissionsManager({ onSettingsUpdated }) {
               <input
                 type="checkbox"
                 disabled={saving || permissionStatus.location !== 'granted'}
-                checked={backgroundEnabled}
+                checked={settings.backgroundLocationEnabled}
                 onChange={toggleBackgroundTracking}
                 className="sr-only peer"
               />
@@ -243,6 +389,31 @@ export default function PermissionsManager({ onSettingsUpdated }) {
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Uygulama kapalı olduğunda da konum paylaşılmasına izin ver.
+        </p>
+      </div>
+      
+      {/* Background Notification Setting */}
+      <div className="mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <FaBell className="text-yellow-500" />
+            <span>Arkaplan Bildirimi</span>
+          </div>
+          <div>
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                disabled={saving || !settings.backgroundLocationEnabled}
+                checked={settings.showBackgroundNotification}
+                onChange={toggleBackgroundNotification}
+                className="sr-only peer"
+              />
+              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Arkaplan konumu etkinken bildirim göster.
         </p>
       </div>
       
