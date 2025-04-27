@@ -18,6 +18,22 @@ const MapComponent = dynamic(() => import("../components/MapComponent"), {
   )
 });
 
+// Helper function to parse coordinates
+const parseCoordinates = (value) => {
+  if (value === null || value === undefined) return null;
+  
+  // If it's already a number, return it
+  if (typeof value === 'number' && !isNaN(value)) return value;
+  
+  // If it's a string, try to parse it
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return !isNaN(parsed) ? parsed : null;
+  }
+  
+  return null;
+};
+
 export default function MapPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -183,10 +199,18 @@ export default function MapPage() {
       
       <main className="flex-1 relative">
         {partner?.latitude && partner?.longitude ? (
-          <div className="absolute inset-0">
+          <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
             <MapComponent 
-              userLocation={user?.latitude && user?.longitude ? { lat: user.latitude, lng: user.longitude } : null}
-              partnerLocation={{ lat: partner.latitude, lng: partner.longitude }}
+              userLocation={user && parseCoordinates(user.latitude) && parseCoordinates(user.longitude) ? 
+                { 
+                  lat: parseCoordinates(user.latitude), 
+                  lng: parseCoordinates(user.longitude) 
+                } : null
+              }
+              partnerLocation={{ 
+                lat: parseCoordinates(partner.latitude), 
+                lng: parseCoordinates(partner.longitude) 
+              }}
               userName={user?.name}
               partnerName={partner?.name}
               onLocationUpdate={handleLocationUpdate}

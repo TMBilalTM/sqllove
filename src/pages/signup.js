@@ -180,7 +180,7 @@ export default function Signup() {
         </div>
         
         <div className="text-center mt-6 text-sm text-gray-500 dark:text-gray-400">
-          <p>SQLLove &copy; 2023. Sevgi Her Yerde.</p>
+          <p>SQLLove &copy; 2025. Sevgi Her Yerde.</p>
         </div>
       </div>
     </div>

@@ -174,7 +174,7 @@ export default function Home() {
             <Logo size="lg" />
           </div>
           <div className="text-center text-gray-600 dark:text-gray-400">
-            <p>© 2023 SQLLove - Sevgi Her Yerde</p>
+            <p>© 2025 SQLLove - Sevgi Her Yerde</p>
             <div className="mt-3 flex justify-center gap-6">
               <a href="#" className="hover:text-primary">Gizlilik</a>
               <a href="#" className="hover:text-primary">Koşullar</a>

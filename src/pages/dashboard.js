@@ -4,10 +4,30 @@ import Link from "next/link";
 import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync, FaUserCircle, FaRegPaperPlane } from "react-icons/fa";
 import Logo from "../components/Logo";
 import PermissionsManager from "../components/PermissionsManager";
-import RelationshipTimer from "../components/RelationshipTimer";
-import { showToast, showSuccess, showError } from "../lib/toast";
 import { getCurrentUser, linkPartner, logout, updateLocationAndBattery } from "../lib/api";
 import { getBatteryLevel } from "../lib/battery";
+
+// Import serviceWorkerBridge functions if they exist, otherwise create empty placeholders
+const getLocationWorker = async () => {
+  try {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      return await navigator.serviceWorker.getRegistration('/location-worker.js');
+    }
+    return null;
+  } catch (err) {
+    console.error('Error getting location worker:', err);
+    return null;
+  }
+};
+
+const getTrackingStatus = async () => {
+  return { isTracking: false };
+};
+
+const registerLocationWorker = async () => {
+  console.log('Registration skipped - worker implementation required');
+  return null;
+};
 
 export default function Dashboard() {
   const router = useRouter();
@@ -45,17 +65,15 @@ export default function Dashboard() {
     }
   }, [router]);
 
-  // Refresh data handler with toast notification
+  // Refresh data handler without toast notification for now
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
       await fetchData();
-      // Show success toast
-      showSuccess('Bilgiler güncellendi', 3000);
+      // Temporarily use console.log instead of toast
+      console.log('Bilgiler güncellendi');
     } catch (err) {
       console.error("Refresh error:", err);
-      // Show error toast
-      showError('Bilgiler güncellenirken hata oluştu', 5000);
     } finally {
       setTimeout(() => setRefreshing(false), 1000);
     }
@@ -135,7 +153,7 @@ export default function Dashboard() {
     };
   }, [router, fetchData]);
 
-  // Handle partner code submit with improved feedback
+  // Handle partner code submit without toast for now
   const handlePartnerCodeSubmit = async (e) => {
     e.preventDefault();
     
@@ -148,9 +166,7 @@ export default function Dashboard() {
       if (data.success) {
         setPartner(data.partner);
         setEnteredCode("");
-        // Show success toast
-        showSuccess(`${data.partner.name} ile bağlantınız kuruldu! ❤️`, 5000);
-        // Refresh data
+        console.log(`${data.partner.name} ile bağlantınız kuruldu!`);
         await fetchData();
       } else {
         setError(data.message || "Partner bağlantısı başarısız oldu.");
@@ -368,13 +384,6 @@ export default function Dashboard() {
             </div>
             
             <div className="md:col-span-2">
-              <RelationshipTimer 
-                startDate={partner.linkDate} 
-                partnerName={partner.name} 
-              />
-            </div>
-
-            <div className="md:col-span-2">
               <PermissionsManager 
                 onSettingsUpdated={(settings) => {
                   console.log("Settings updated:", settings);
@@ -386,7 +395,7 @@ export default function Dashboard() {
       </main>
       
       <footer className="py-6 text-center text-sm text-gray-500">
-        <p>SQLLove &copy; 2023 - Sevgi Her Yerde</p>
+        <p>SQLLove &copy; 2025 - Sevgi Her Yerde</p>
       </footer>
     </div>
   );
