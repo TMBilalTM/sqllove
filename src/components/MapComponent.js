@@ -85,7 +85,7 @@ export default function MapComponent({ userLocation, partnerLocation, userName, 
         map.remove();
       }
     };
-  }, []);
+  }, []); // This is correct - we only want to initialize the map once
 
   // Handle markers
   useEffect(() => {
@@ -222,7 +222,7 @@ export default function MapComponent({ userLocation, partnerLocation, userName, 
     }, 30000);
     
     return () => clearInterval(updateInterval);
-  }, [onLocationUpdate]);
+  }, [onLocationUpdate, markers]); // Add markers as a dependency
 
   if (error) {
     return (

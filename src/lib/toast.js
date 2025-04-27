@@ -22,10 +22,12 @@ export const showInfo = (message, duration = 3000) => {
   return showToast(message, 'info', duration);
 };
 
-// Export default for convenience
-export default {
+// Replace the anonymous default export with a named export
+const toastUtility = {
   showToast,
   showSuccess,
   showError,
   showInfo
 };
+
+export default toastUtility;

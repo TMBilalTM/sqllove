@@ -316,7 +316,7 @@ export default function PermissionsManager({ onSettingsUpdated }) {
             <div>
               <span className="font-medium">Konum İzni</span>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Partner'iniz konumunuzu görebilsin
+                Partner&apos;iniz konumunuzu görebilsin
               </p>
             </div>
           </div>
