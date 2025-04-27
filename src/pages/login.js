@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { FaSignInAlt, FaEnvelope, FaLock } from "react-icons/fa";
+import { FaSignInAlt, FaEnvelope, FaLock, FaHeart } from "react-icons/fa";
 import Logo from "../components/Logo";
 import { login, checkAuth } from "../lib/api";
 
@@ -45,82 +45,108 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gray-50 dark:bg-gray-900">
-      <div className="w-full max-w-md p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-        <div className="text-center mb-8">
-          <Logo size="lg" className="mx-auto" />
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Hesabınıza giriş yapın</p>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-gradient-to-b from-white to-pink-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="w-full max-w-md">
+        <div className="love-card bg-white dark:bg-gray-800 p-8 shadow-xl">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-3">
+              <Logo size="xl" />
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Sevgi paylaştıkça güzeldir
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 rounded-xl text-sm border-l-4 border-red-500">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                E-posta
+              </label>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <FaEnvelope />
+                </div>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="E-posta adresiniz"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="love-input pl-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Şifre
+                </label>
+                <a href="#" className="text-sm text-primary hover:text-primary-dark">
+                  Şifremi unuttum
+                </a>
+              </div>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <FaLock />
+                </div>
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="Şifreniz"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="love-input pl-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-love w-full flex items-center justify-center gap-2 py-3"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Giriş Yapılıyor
+                </div>
+              ) : (
+                <>
+                  <FaSignInAlt /> Giriş Yap
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-8 text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="h-px bg-gray-300 dark:bg-gray-700 flex-1"></div>
+              <FaHeart className="text-primary" />
+              <div className="h-px bg-gray-300 dark:bg-gray-700 flex-1"></div>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">
+              Hesabınız yok mu?{" "}
+              <Link href="/signup" className="text-primary hover:text-primary-dark font-medium">
+                Kayıt ol
+              </Link>
+            </p>
+          </div>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 rounded-md text-sm">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
-              E-posta
-            </label>
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                <FaEnvelope />
-              </div>
-              <input
-                id="email"
-                type="email"
-                placeholder="E-posta adresiniz"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
-              Şifre
-            </label>
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                <FaLock />
-              </div>
-              <input
-                id="password"
-                type="password"
-                placeholder="Şifreniz"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-foreground text-background rounded-md hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
-          >
-            {loading ? (
-              "Giriş yapılıyor..."
-            ) : (
-              <>
-                <FaSignInAlt /> Giriş Yap
-              </>
-            )}
-          </button>
-        </form>
-
-        <div className="mt-4 text-center text-sm">
-          <p>
-            Hesabınız yok mu?{" "}
-            <Link href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline">
-              Kayıt ol
-            </Link>
-          </p>
+        <div className="text-center mt-6 text-sm text-gray-500 dark:text-gray-400">
+          <p>SQLLove &copy; 2023. Sevgi Her Yerde.</p>
         </div>
       </div>
     </div>

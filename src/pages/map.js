@@ -1,25 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
-import { FaArrowLeft, FaBatteryThreeQuarters, FaSpinner } from "react-icons/fa";
+import { FaArrowLeft, FaBatteryThreeQuarters, FaSpinner, FaHeart, FaUserCircle } from "react-icons/fa";
 import Link from "next/link";
 import Logo from "../components/Logo";
 import { getCurrentUser, getPartnerInfo, updateLocationAndBattery } from "../lib/api";
 import { getBatteryLevel } from "../lib/battery";
 
-// Import the map component dynamically with NO SSR
-const MapComponent = dynamic(
-  () => import("../components/MapComponent"),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="h-full w-full flex flex-col items-center justify-center">
-        <FaSpinner className="text-3xl animate-spin mb-4" />
-        <div>Harita yükleniyor...</div>
-      </div>
-    )
-  }
-);
+// Leaflet harita bileşenini client tarafında yükle
+const MapComponent = dynamic(() => import("../components/MapComponent"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
+      <FaSpinner className="text-3xl animate-spin mb-4 text-primary" />
+      <div>Harita yükleniyor...</div>
+    </div>
+  )
+});
 
 export default function MapPage() {
   const router = useRouter();
@@ -131,9 +128,9 @@ export default function MapPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-pink-50 dark:from-gray-900 dark:to-gray-800">
         <div className="flex flex-col items-center">
-          <FaSpinner className="text-3xl animate-spin mb-4" />
+          <FaSpinner className="text-4xl animate-spin mb-4 text-primary" />
           <div className="text-xl">Yükleniyor...</div>
         </div>
       </div>
@@ -154,23 +151,31 @@ export default function MapPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white dark:bg-gray-800 shadow-sm p-4">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 shadow-md p-4 z-10">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Link href="/dashboard" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
               <FaArrowLeft />
             </Link>
             <Logo size="sm" />
           </div>
           
           {partner && (
-            <div className="flex items-center gap-2">
-              <FaBatteryThreeQuarters className={`${
-                (partner.batteryLevel > 50) ? "text-green-500" : 
-                (partner.batteryLevel > 20) ? "text-yellow-500" : "text-red-500"
-              }`} />
-              <span>{partner.batteryLevel || "?"}%</span>
+            <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700 px-4 py-2 rounded-full">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-400 to-red-500 flex items-center justify-center text-white">
+                <FaUserCircle />
+              </div>
+              <div>
+                <div className="text-sm font-medium">{partner.name}</div>
+                <div className="flex items-center gap-1 text-xs">
+                  <FaBatteryThreeQuarters className={`${
+                    (partner.batteryLevel > 50) ? "text-green-500" : 
+                    (partner.batteryLevel > 20) ? "text-yellow-500" : "text-red-500"
+                  }`} />
+                  <span>{partner.batteryLevel || "?"}%</span>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -178,25 +183,22 @@ export default function MapPage() {
       
       <main className="flex-1 relative">
         {partner?.latitude && partner?.longitude ? (
-          <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
+          <div className="absolute inset-0">
             <MapComponent 
-              userLocation={user && user.latitude && user.longitude ? 
-                { lat: parseFloat(user.latitude), lng: parseFloat(user.longitude) } : 
-                null
-              }
-              partnerLocation={{ 
-                lat: parseFloat(partner.latitude), 
-                lng: parseFloat(partner.longitude) 
-              }}
+              userLocation={user?.latitude && user?.longitude ? { lat: user.latitude, lng: user.longitude } : null}
+              partnerLocation={{ lat: partner.latitude, lng: partner.longitude }}
               userName={user?.name}
               partnerName={partner?.name}
               onLocationUpdate={handleLocationUpdate}
             />
           </div>
         ) : (
-          <div className="h-full flex items-center justify-center flex-col gap-4">
-            <div className="text-xl">Partner konumu henüz paylaşılmadı.</div>
-            <Link href="/dashboard" className="px-4 py-2 bg-foreground text-background rounded-md">
+          <div className="h-full flex items-center justify-center flex-col gap-6">
+            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-full">
+              <FaHeart className="text-5xl text-primary animate-heartbeat" />
+            </div>
+            <div className="text-xl max-w-xs text-center">Partner konumu henüz paylaşılmadı.</div>
+            <Link href="/dashboard" className="btn-love px-6 py-2">
               Geri Dön
             </Link>
           </div>

@@ -29,7 +29,7 @@ try {
 
     // Kullanıcı ID'sini al
     $userId = $payload['user_id'];
-    
+
     // GET request için kullanıcı ayarlarını getir
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         // Önce settings tablosunda kullanıcının kaydı var mı kontrol et

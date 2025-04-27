@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { FaHeart } from 'react-icons/fa';
 
 export default function Logo({ size = 'md', className = '' }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -31,12 +32,11 @@ export default function Logo({ size = 'md', className = '' }) {
     '2xl': 'text-4xl sm:text-5xl'
   };
   
-  // Love kelimesinin rengi için
-  const loveColor = isDarkMode ? 'text-pink-500' : 'text-red-500';
-  
   return (
-    <div className={`font-bold ${sizeClasses[size]} ${className}`}>
-      SQL<span className={loveColor}>Love</span>
+    <div className={`font-bold ${sizeClasses[size]} ${className} flex items-center`}>
+      <span className="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-red-500">SQL</span>
+      <FaHeart className="mx-1 text-pink-500 animate-heartbeat" />
+      <span className="bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-pink-500">ove</span>
     </div>
   );
 }

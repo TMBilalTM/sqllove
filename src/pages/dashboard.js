@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync } from "react-icons/fa";
+import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync, FaUserCircle, FaRegPaperPlane } from "react-icons/fa";
 import Logo from "../components/Logo";
 import PermissionsManager from "../components/PermissionsManager";
-import { getCurrentUser, linkPartner, logout, updateLocationAndBattery } from "../lib/api";
-import { getBatteryLevel } from "../lib/battery";
+import RelationshipTimer from "../components/RelationshipTimer";
+import { getCurrentUser, linkPartner, logout, updateLocationAndBattery, getBatteryLevel } from "../lib/api";
 import { registerLocationWorker, getLocationWorker, getTrackingStatus } from "../lib/serviceWorkerBridge";
+import { showToast } from "../lib/toast";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -20,40 +21,47 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [backgroundActive, setBackgroundActive] = useState(false);
 
-  // Function to fetch all user and partner data
   const fetchData = useCallback(async () => {
     try {
       console.log("Fetching user data...");
       const data = await getCurrentUser();
-      
+
       if (!data) {
         router.push("/login");
         return;
       }
-      
+
       setUser(data.user);
       setPartnerCode(data.user.partnerCode);
-      
+
       if (data.partner) {
         setPartner(data.partner);
       }
-      
+
       return true;
     } catch (err) {
       console.error(err);
       return false;
     }
   }, [router]);
-  
-  // Refresh data manually
+
+  // Refresh data handler with toast notification
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchData();
-    setTimeout(() => setRefreshing(false), 1000);  // Show refresh animation for at least 1 second
+    try {
+      await fetchData();
+      // Show success toast
+      showToast('Bilgiler güncellendi', 'success', 3000);
+    } catch (err) {
+      console.error("Refresh error:", err);
+      // Show error toast
+      showToast('Bilgiler güncellenirken hata oluştu', 'error', 5000);
+    } finally {
+      setTimeout(() => setRefreshing(false), 1000);
+    }
   };
 
   useEffect(() => {
-    // Kullanıcı bilgilerini ve partner bilgilerini al
     async function initialFetch() {
       const success = await fetchData();
       if (!success) {
@@ -64,22 +72,19 @@ export default function Dashboard() {
     }
 
     initialFetch();
-    
-    // Konum ve şarj durumu güncellemesi için
+
     const updateLocationData = async () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             const { latitude, longitude } = position.coords;
-            
-            // Get battery level with our utility
+
             const batteryLevel = await getBatteryLevel();
-            
+
             console.log("Updating location and battery:", { latitude, longitude, batteryLevel });
-            
+
             try {
               await updateLocationAndBattery(latitude, longitude, batteryLevel);
-              // Refresh data after updating location
               await fetchData();
             } catch (err) {
               console.error("Location update error:", err);
@@ -92,22 +97,18 @@ export default function Dashboard() {
         );
       }
     };
-    
-    // Initial location update
+
     updateLocationData();
-    
-    // Set up regular updates
-    const locationInterval = setInterval(updateLocationData, 60000); // Every minute
-    const dataInterval = setInterval(fetchData, 30000); // Refresh user/partner data every 30 seconds
-    
-    // Check if background tracking was previously enabled
+
+    const locationInterval = setInterval(updateLocationData, 60000);
+    const dataInterval = setInterval(fetchData, 30000);
+
     const isBackgroundEnabled = localStorage.getItem('background_tracking_enabled') === 'true';
-    
+
     if (isBackgroundEnabled) {
-      // Check if the service worker is already running
       const checkServiceWorker = async () => {
         const registration = await getLocationWorker();
-        
+
         if (registration) {
           try {
             const status = await getTrackingStatus();
@@ -116,7 +117,6 @@ export default function Dashboard() {
             console.error("Error checking tracking status:", err);
           }
         } else if (isBackgroundEnabled) {
-          // Background was enabled but worker isn't running, try to restore it
           try {
             await registerLocationWorker();
             setBackgroundActive(true);
@@ -125,18 +125,22 @@ export default function Dashboard() {
           }
         }
       };
-      
+
       checkServiceWorker();
     }
-    
+
     return () => {
       clearInterval(locationInterval);
       clearInterval(dataInterval);
     };
   }, [router, fetchData]);
 
+  // Handle partner code submit with improved feedback
   const handlePartnerCodeSubmit = async (e) => {
     e.preventDefault();
+    
+    setLoading(true);
+    setError("");
     
     try {
       const data = await linkPartner(enteredCode);
@@ -144,7 +148,9 @@ export default function Dashboard() {
       if (data.success) {
         setPartner(data.partner);
         setEnteredCode("");
-        // Refresh data after linking partner
+        // Show success toast
+        showToast(`${data.partner.name} ile bağlantınız kuruldu! ❤️`, 'success', 5000);
+        // Refresh data
         await fetchData();
       } else {
         setError(data.message || "Partner bağlantısı başarısız oldu.");
@@ -152,6 +158,8 @@ export default function Dashboard() {
     } catch (err) {
       setError("Bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -179,77 +187,100 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
-      <header className="bg-white dark:bg-gray-800 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-b from-white to-pink-50 dark:from-gray-900 dark:to-gray-800">
+      <header className="bg-white dark:bg-gray-800 shadow">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <Logo size="md" />
           <div className="flex items-center gap-3">
             <button 
               onClick={handleRefresh} 
-              className={`p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 ${refreshing ? 'animate-spin' : ''}`}
+              className={`p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition ${refreshing ? 'animate-spin' : ''}`}
               disabled={refreshing}
+              aria-label="Yenile"
             >
               <FaSync />
             </button>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              aria-label="Çıkış Yap"
             >
-              <FaSignOutAlt /> Çıkış Yap
+              <FaSignOutAlt /> <span className="hidden sm:inline">Çıkış</span>
             </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Hoş Geldin, {user?.name}</h2>
-          
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
-            <h3 className="text-lg font-medium mb-3">Partner Kodun</h3>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 p-3 bg-gray-100 dark:bg-gray-700 rounded-md font-mono">
-                {partnerCode}
-              </div>
-              <button
-                onClick={copyToClipboard}
-                className="p-3 bg-gray-200 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
-                title="Kodu kopyala"
-              >
-                <FaCopy />
-              </button>
+        <div className="love-card bg-white dark:bg-gray-800 p-6 mb-8">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-pink-400 to-red-500 rounded-full flex items-center justify-center text-white text-3xl">
+              <FaUserCircle />
             </div>
-            {copySuccess && (
-              <p className="text-sm text-green-600 dark:text-green-400 mt-2">
-                Kod kopyalandı!
-              </p>
-            )}
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold mb-1 text-center sm:text-left">Merhaba, {user?.name}</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-4 text-center sm:text-left">Aşkınızı SQLLove ile paylaşın</p>
+              
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
+                  <FaRegPaperPlane className="text-primary" /> Partner Kodun
+                </h3>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl font-mono text-lg text-center tracking-wider">
+                    {partnerCode}
+                  </div>
+                  <button
+                    onClick={copyToClipboard}
+                    className="p-3 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    title="Kodu kopyala"
+                  >
+                    <FaCopy />
+                  </button>
+                </div>
+                {copySuccess && (
+                  <p className="text-sm text-green-600 dark:text-green-400 mt-2 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Kod kopyalandı!
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
         {!partner ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Partner Ekle</h2>
+          <div className="love-card bg-white dark:bg-gray-800 p-6">
+            <div className="text-center mb-6">
+              <div className="inline-block p-4 bg-primary/10 rounded-full mb-4">
+                <FaHeart className="text-3xl text-primary" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Partner Ekle</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Sevgilinizle bağlantı kurmak için partnerinizin kodunu girin
+              </p>
+            </div>
             
             {error && (
-              <div className="mb-4 p-3 bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 rounded-md text-sm">
+              <div className="mb-6 p-4 bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 rounded-xl text-sm border-l-4 border-red-500">
                 {error}
               </div>
             )}
 
             <form onSubmit={handlePartnerCodeSubmit}>
-              <div className="flex gap-2">
+              <div className="flex gap-2 max-w-md mx-auto">
                 <input
                   type="text"
                   value={enteredCode}
-                  onChange={(e) => setEnteredCode(e.target.value)}
+                  onChange={(e) => setEnteredCode(e.target.value.toUpperCase())}
                   placeholder="Partnerinizin kodunu girin"
-                  className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                  className="love-input flex-1 bg-white dark:bg-gray-700 text-center font-mono tracking-wider uppercase text-lg"
                   required
                 />
                 <button
                   type="submit"
-                  className="p-3 bg-foreground text-background rounded-md hover:bg-gray-800 dark:hover:bg-gray-200"
+                  className="btn-love flex items-center justify-center w-12 h-12"
                 >
                   <FaHeart />
                 </button>
@@ -258,34 +289,44 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-              <div className="flex items-center mb-4">
-                <FaUserFriends className="text-2xl mr-3 text-blue-500" />
+            <div className="love-card bg-white dark:bg-gray-800 p-6">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 mr-3 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <FaUserFriends className="text-xl text-blue-500" />
+                </div>
                 <h2 className="text-xl font-semibold">Partner Bilgileri</h2>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm text-gray-500 dark:text-gray-400">Partner Adı</h3>
-                  <p className="font-medium">{partner.name}</p>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Partner Adı</h3>
+                  <p className="font-medium text-lg">{partner.name}</p>
                 </div>
 
                 <div>
-                  <h3 className="text-sm text-gray-500 dark:text-gray-400">Şarj Durumu</h3>
-                  <div className="flex items-center gap-1">
-                    <FaBatteryThreeQuarters className={`${
-                      (partner.batteryLevel > 50) ? "text-green-500" : 
-                      (partner.batteryLevel > 20) ? "text-yellow-500" : "text-red-500"
-                    }`} />
-                    <p className="font-medium">{partner.batteryLevel || "Bilinmiyor"}%</p>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Şarj Durumu</h3>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      (partner.batteryLevel > 50) ? "bg-green-100 text-green-500 dark:bg-green-900/30" : 
+                      (partner.batteryLevel > 20) ? "bg-yellow-100 text-yellow-500 dark:bg-yellow-900/30" : "bg-red-100 text-red-500 dark:bg-red-900/30"
+                    }`}>
+                      <FaBatteryThreeQuarters />
+                    </div>
+                    <p className="font-medium text-lg">{partner.batteryLevel || "Bilinmiyor"}%</p>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-sm text-gray-500 dark:text-gray-400">Son Görülme</h3>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Son Görülme</h3>
                   <p className="font-medium">
                     {partner.lastSeen 
-                      ? new Date(partner.lastSeen).toLocaleString("tr-TR") 
+                      ? new Date(partner.lastSeen).toLocaleString("tr-TR", {
+                          year: 'numeric',
+                          month: 'long', 
+                          day: 'numeric', 
+                          hour: '2-digit', 
+                          minute: '2-digit'
+                        }) 
                       : "Bilinmiyor"}
                   </p>
                 </div>
@@ -294,46 +335,59 @@ export default function Dashboard() {
               <div className="mt-6">
                 <Link
                   href="/map"
-                  className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-foreground text-background rounded-md hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
+                  className="btn-love w-full flex items-center justify-center gap-2 py-3"
                 >
                   <FaMapMarkerAlt /> Haritada Göster
                 </Link>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 h-64 flex flex-col justify-center">
-              <div className="text-center">
-                <FaHeart className="text-5xl text-red-500 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Partner ile bağlantınız aktif
+            <div className="love-card bg-white dark:bg-gray-800 p-6">
+              <div className="h-full flex flex-col items-center justify-center text-center">
+                <div className="mb-6">
+                  <FaHeart className="text-5xl text-primary animate-heartbeat mx-auto" />
+                </div>
+                <h3 className="text-xl font-medium mb-2">Sevgi Bağlantınız Aktif</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  {partner.name} ile konum paylaşımınız devam ediyor
                 </p>
                 
                 {user && user.batteryLevel && (
-                  <div className="flex items-center justify-center gap-1 mt-4">
-                    <span>Şarj durumunuz:</span>
-                    <FaBatteryThreeQuarters className={`${
-                      (user.batteryLevel > 50) ? "text-green-500" : 
-                      (user.batteryLevel > 20) ? "text-yellow-500" : "text-red-500"
-                    }`} />
-                    <span>{user.batteryLevel}%</span>
+                  <div className="flex flex-col items-center mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl w-full">
+                    <span className="text-sm text-gray-500 dark:text-gray-400 mb-2">Şarj durumunuz</span>
+                    <div className="flex items-center gap-2">
+                      <FaBatteryThreeQuarters className={`${
+                        (user.batteryLevel > 50) ? "text-green-500" : 
+                        (user.batteryLevel > 20) ? "text-yellow-500" : "text-red-500"
+                      }`} />
+                      <span className="font-medium">{user.batteryLevel}%</span>
+                    </div>
                   </div>
                 )}
               </div>
             </div>
             
-            <div className="col-span-1 md:col-span-2">
+            <div className="md:col-span-2">
+              <RelationshipTimer 
+                startDate={partner.linkDate} 
+                partnerName={partner.name} 
+              />
+            </div>
+
+            <div className="md:col-span-2">
               <PermissionsManager 
                 onSettingsUpdated={(settings) => {
                   console.log("Settings updated:", settings);
-                  if ('backgroundLocationEnabled' in settings) {
-                    setBackgroundActive(settings.backgroundLocationEnabled);
-                  }
                 }} 
               />
             </div>
           </div>
         )}
       </main>
+      
+      <footer className="py-6 text-center text-sm text-gray-500">
+        <p>SQLLove &copy; 2023 - Sevgi Her Yerde</p>
+      </footer>
     </div>
   );
 }
