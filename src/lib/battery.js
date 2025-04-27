@@ -3,36 +3,41 @@
  */
 
 /**
- * Get the current battery level with fallbacks
+ * Battery detection utility function
  * @returns {Promise<number|null>} Battery level as percentage or null if unavailable
  */
 export async function getBatteryLevel() {
   try {
-    // Try using the Battery API
+    // Method 1: Standard Battery API
     if ('getBattery' in navigator) {
-      try {
-        const battery = await navigator.getBattery();
-        if (!isNaN(battery.level)) {
-          return Math.round(battery.level * 100);
-        }
-      } catch (err) {
-        console.log("Battery API error:", err);
+      const battery = await navigator.getBattery();
+      if (battery && !isNaN(battery.level)) {
+        return Math.round(battery.level * 100);
       }
     }
     
-    // If we're on a mobile device, provide a default value since most mobile devices have batteries
-    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    // Method 2: Legacy battery properties
+    if (navigator.battery || navigator.webkitBattery || navigator.mozBattery) {
+      const battery = navigator.battery || navigator.webkitBattery || navigator.mozBattery;
+      if (battery && !isNaN(battery.level)) {
+        return Math.round(battery.level * 100);
+      }
+    }
+    
+    // Method 3: For mobile devices, use a default value
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
       navigator.userAgent
     );
     
-    if (isMobileDevice) {
-      return 75; // Default value for mobile devices
+    if (isMobile) {
+      // Return a default level for mobile devices
+      return 75;
     }
     
-    // For desktop, return a meaningful default or null
+    // No battery info available
     return null;
   } catch (err) {
-    console.error("Battery detection error:", err);
+    console.error("Error detecting battery level:", err);
     return null;
   }
 }

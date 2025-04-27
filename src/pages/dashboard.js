@@ -69,20 +69,15 @@ export default function Dashboard() {
           async (position) => {
             const { latitude, longitude } = position.coords;
             
-            // Batarya seviyesini yardımcı fonksiyon ile al
+            // Get battery level with our utility
             const batteryLevel = await getBatteryLevel();
             
             console.log("Updating location and battery:", { latitude, longitude, batteryLevel });
             
             try {
-              const result = await updateLocationAndBattery(latitude, longitude, batteryLevel);
-              if (result.success) {
-                console.log("Location and battery updated successfully");
-                // Güncellenen kullanıcı bilgilerini al
-                await fetchData();
-              } else {
-                console.error("Location update failed:", result.error);
-              }
+              await updateLocationAndBattery(latitude, longitude, batteryLevel);
+              // Refresh data after updating location
+              await fetchData();
             } catch (err) {
               console.error("Location update error:", err);
             }
@@ -90,7 +85,7 @@ export default function Dashboard() {
           (error) => {
             console.error("Geolocation error:", error);
           },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          { enableHighAccuracy: true }
         );
       }
     };
