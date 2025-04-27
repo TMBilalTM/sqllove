@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
-import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserPlus, FaSignInAlt, FaMobile, FaShieldAlt } from "react-icons/fa";
+import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserPlus, FaSignInAlt, FaMobile, FaShieldAlt, FaTachometerAlt } from "react-icons/fa";
 import Logo from "../components/Logo";
+import { getCurrentUser } from "../lib/api";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +19,25 @@ const geistMono = Geist_Mono({
 
 export default function Home() {
   const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setIsLoggedIn(!!userData); // Convert to boolean
+      } catch (err) {
+        console.error("Auth check error:", err);
+        setIsLoggedIn(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   return (
     <div
@@ -26,19 +46,37 @@ export default function Home() {
       <header className="fixed top-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md z-50 shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <Logo size="md" />
+          
+          {/* Navigation buttons based on authentication state */}
           <div className="flex gap-4">
-            <Link 
-              href="/login" 
-              className="flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-            >
-              <FaSignInAlt /> Giriş
-            </Link>
-            <Link 
-              href="/signup" 
-              className="btn-love flex items-center gap-2 px-4 py-2 rounded-full"
-            >
-              <FaUserPlus /> Kayıt Ol
-            </Link>
+            {loading ? (
+              // Show loading state
+              <div className="w-24 h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-full"></div>
+            ) : isLoggedIn ? (
+              // Show dashboard button for logged in users
+              <Link 
+                href="/dashboard" 
+                className="btn-love flex items-center gap-2 px-6 py-2 rounded-full"
+              >
+                <FaTachometerAlt /> Panel
+              </Link>
+            ) : (
+              // Show login/signup buttons for guests
+              <>
+                <Link 
+                  href="/login" 
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                >
+                  <FaSignInAlt /> Giriş
+                </Link>
+                <Link 
+                  href="/signup" 
+                  className="btn-love flex items-center gap-2 px-4 py-2 rounded-full"
+                >
+                  <FaUserPlus /> Kayıt Ol
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -58,14 +96,25 @@ export default function Home() {
                 Sevgililerle gerçek zamanlı konum paylaşımı ve şarj durumu takibi için modern ve şık bir çözüm
               </p>
               
+              {/* Show different buttons based on authentication state */}
               <div className="flex gap-4">
-                <Link href="/signup" className="btn-love px-8 py-3 text-lg font-medium rounded-full">
-                  Hemen Başla
-                </Link>
-                
-                <Link href="/login" className="px-8 py-3 text-lg font-medium rounded-full border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-                  Giriş Yap
-                </Link>
+                {loading ? (
+                  <div className="w-40 h-12 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-full"></div>
+                ) : isLoggedIn ? (
+                  <Link href="/dashboard" className="btn-love px-8 py-3 text-lg font-medium rounded-full">
+                    Panel'e Git
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/signup" className="btn-love px-8 py-3 text-lg font-medium rounded-full">
+                      Hemen Başla
+                    </Link>
+                    
+                    <Link href="/login" className="px-8 py-3 text-lg font-medium rounded-full border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                      Giriş Yap
+                    </Link>
+                  </>
+                )}
               </div>
               
               <div className="mt-8 flex items-center gap-4 text-gray-500 dark:text-gray-400">

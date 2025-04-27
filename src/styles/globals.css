@@ -171,6 +171,7 @@ body {
   display: inline-block;
   width: 60px;
   height: 34px;
+  z-index: 10; /* Ensure it doesn't interfere with other elements */
 }
 
 .love-switch input {
@@ -189,6 +190,7 @@ body {
   background-color: #ccc;
   transition: .4s;
   border-radius: 34px;
+  z-index: 5; /* Lower z-index than the parent */
 }
 
 .love-slider:before {

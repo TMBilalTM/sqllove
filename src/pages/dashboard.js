@@ -232,9 +232,10 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-8 relative z-0">
+        {/* Success message with higher z-index */}
         {successMessage && (
-          <div className="mb-4 p-3 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-xl text-sm border-l-4 border-green-500 flex justify-between items-center">
+          <div className="mb-4 p-3 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-xl text-sm border-l-4 border-green-500 flex justify-between items-center relative z-20">
             <span>{successMessage}</span>
             <button onClick={() => setSuccessMessage("")} className="text-green-700 dark:text-green-300 hover:opacity-75">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -244,7 +245,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="love-card bg-white dark:bg-gray-800 p-6 mb-8">
+        <div className="love-card bg-white dark:bg-gray-800 p-6 mb-8 relative z-10">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
             <div className="w-20 h-20 bg-gradient-to-br from-pink-400 to-red-500 rounded-full flex items-center justify-center text-white text-3xl">
               <FaUserCircle />
@@ -283,7 +284,7 @@ export default function Dashboard() {
         </div>
 
         {!partner ? (
-          <div className="love-card bg-white dark:bg-gray-800 p-6">
+          <div className="love-card bg-white dark:bg-gray-800 p-6 relative z-10">
             <div className="text-center mb-6">
               <div className="inline-block p-4 bg-primary/10 rounded-full mb-4">
                 <FaHeart className="text-3xl text-primary" />
@@ -399,7 +400,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 relative z-10">
               <PermissionsManager 
                 onSettingsUpdated={(settings) => {
                   console.log("Settings updated:", settings);

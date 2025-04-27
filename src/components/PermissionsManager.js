@@ -341,7 +341,7 @@ export default function PermissionsManager({ onSettingsUpdated }) {
         </div>
       </div>
       
-      {/* Background Location Permission */}
+      {/* Background Location Permission - FIXED TOGGLE SWITCH */}
       <div className="mb-6 pb-6 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -355,8 +355,9 @@ export default function PermissionsManager({ onSettingsUpdated }) {
               </p>
             </div>
           </div>
-          <div>
-            <label className="inline-flex items-center cursor-pointer">
+          <div className="relative">
+            {/* FIX: Replace love-slider with standard tailwind toggle */}
+            <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 disabled={saving || permissionStatus.location !== 'granted'}
@@ -364,13 +365,18 @@ export default function PermissionsManager({ onSettingsUpdated }) {
                 onChange={toggleBackgroundTracking}
                 className="sr-only peer"
               />
-              <div className="love-slider"></div>
+              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full 
+                  peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white 
+                  after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white 
+                  after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 
+                  after:transition-all dark:border-gray-600 peer-checked:bg-primary">
+              </div>
             </label>
           </div>
         </div>
       </div>
       
-      {/* Background Notification Setting */}
+      {/* Background Notification Setting - FIXED TOGGLE SWITCH */}
       <div className="mb-6 pb-6 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -384,8 +390,9 @@ export default function PermissionsManager({ onSettingsUpdated }) {
               </p>
             </div>
           </div>
-          <div>
-            <label className="inline-flex items-center cursor-pointer">
+          <div className="relative">
+            {/* FIX: Replace love-slider with standard tailwind toggle */}
+            <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 disabled={saving || !settings.backgroundLocationEnabled}
@@ -393,7 +400,12 @@ export default function PermissionsManager({ onSettingsUpdated }) {
                 onChange={toggleBackgroundNotification}
                 className="sr-only peer"
               />
-              <div className="love-slider"></div>
+              <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full 
+                  peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white 
+                  after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white 
+                  after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 
+                  after:transition-all dark:border-gray-600 peer-checked:bg-primary">
+              </div>
             </label>
           </div>
         </div>
