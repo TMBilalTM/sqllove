@@ -28,7 +28,52 @@ try {
     
     // GET isteği - İlişki bilgisini al
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        // Partner bilgisini al
+        // Önce kullanıcının partner_id bilgisini kontrol et
+        $stmt = $db->prepare("SELECT partner_id FROM users WHERE id = ? AND partner_id IS NOT NULL");
+        $stmt->execute([$userId]);
+        $userPartner = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Kullanıcının partner_id değeri varsa ama partner_links tablosunda kaydı yoksa, kayıt oluştur
+        if ($userPartner && !empty($userPartner['partner_id'])) {
+            $partnerId = $userPartner['partner_id'];
+
+            // partner_links tablosunda kaydı var mı kontrol et
+            $stmt = $db->prepare("SELECT id FROM partner_links WHERE user_id = ? AND partner_id = ?");
+            $stmt->execute([$userId, $partnerId]);
+            $existingLink = $stmt->fetch();
+            
+            if (!$existingLink) {
+                // İlişki kaydını oluştur
+                try {
+                    $db->beginTransaction();
+                    
+                    // Çift yönlü partner bağlantısını kur
+                    $stmt = $db->prepare("INSERT INTO partner_links (user_id, partner_id) VALUES (?, ?)");
+                    $stmt->execute([$userId, $partnerId]);
+                    
+                    // Karşılıklı olarak da bağlantı kur
+                    $stmt = $db->prepare("INSERT INTO partner_links (user_id, partner_id) VALUES (?, ?)");
+                    $stmt->execute([$partnerId, $userId]);
+                    
+                    // İlişki tablosuna bugünün tarihiyle kaydet
+                    $today = date('Y-m-d');
+                    $stmt = $db->prepare("
+                        INSERT INTO relationships (user_id, partner_id, start_date) 
+                        VALUES (?, ?, ?)
+                    ");
+                    $stmt->execute([$userId, $partnerId, $today]);
+                    
+                    $db->commit();
+                } catch (Exception $e) {
+                    if ($db->inTransaction()) {
+                        $db->rollBack();
+                    }
+                    error_log("Partner ilişkisi oluşturma hatası: " . $e->getMessage());
+                }
+            }
+        }
+        
+        // Partner bilgisini al (partner_links tablosundan)
         $stmt = $db->prepare("
             SELECT p.id, p.name, p.email, l.latitude, l.longitude, l.battery_level, l.last_seen 
             FROM partner_links pl
@@ -51,7 +96,7 @@ try {
         ");
         $stmt->execute([$userId, $partner['id'], $partner['id'], $userId]);
         $relationship = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if (!$relationship) {
             // İlişki kaydı yoksa varsayılan değerlerle oluştur
             $defaultStartDate = date('Y-m-d', strtotime('-1 month')); // Varsayılan olarak 1 ay önce
