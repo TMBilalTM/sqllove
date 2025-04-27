@@ -17,13 +17,13 @@ if (empty($token)) {
 
 try {
     $payload = verifyJWT($token);
-    
+
     if (!$payload) {
         http_response_code(401);
         echo json_encode(['success' => false, 'message' => 'Yetkisiz erişim: Geçersiz token']);
         exit;
     }
-    
+
     $userId = $payload['user_id'];
     
     // GET isteği - İlişki bilgisini al
