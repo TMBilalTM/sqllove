@@ -3,10 +3,11 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { renderToStaticMarkup } from "react-dom/server";
-import { FaMapMarkerAlt, FaHeart, FaUser, FaHome } from "react-icons/fa";
+import { FaMapMarkerAlt, FaHeart, FaUser } from "react-icons/fa";
 import { updateLocationAndBattery } from "../lib/api";
+import { getBatteryLevel } from "../lib/battery";
 
-// Leaflet simgeler için düzeltme - React Icons ile özel marker oluşturma
+// Leaflet simgeler için özel marker oluşturma
 const createCustomIcon = (IconComponent, color, size = 32) => {
   const iconMarkup = renderToStaticMarkup(
     <div style={{ 
@@ -61,44 +62,13 @@ function LocationUpdater({ onLocationUpdate }) {
     };
   }, []);
   
-  const getBatteryLevel = async () => {
-    try {
-      // Method 1: Use the Battery API if available
-      if ('getBattery' in navigator) {
-        console.log("Using Battery API");
-        const battery = await navigator.getBattery();
-        return Math.round(battery.level * 100);
-      }
-      
-      // Method 2: Use the deprecated navigator.battery property
-      else if (navigator.battery || navigator.webkitBattery || navigator.mozBattery) {
-        console.log("Using legacy battery property");
-        const battery = navigator.battery || navigator.webkitBattery || navigator.mozBattery;
-        return Math.round(battery.level * 100);
-      }
-      
-      // Method 3: For desktop, check if power source is battery
-      else if (navigator.connection && navigator.connection.type === 'cellular') {
-        console.log("Using estimated battery level for mobile");
-        // For mobile devices, return a default value
-        return 50; // Default 50% for mobile
-      }
-      
-      console.log("No battery API available");
-      return null; // No battery info available
-    } catch (err) {
-      console.error("Error getting battery info:", err);
-      return null;
-    }
-  };
-  
   const updateCurrentLocation = async () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
           
-          // Get battery level using our enhanced function
+          // Get battery level using our utility
           const batteryLevel = await getBatteryLevel();
           
           console.log("Updating location:", { latitude, longitude, batteryLevel });
@@ -121,7 +91,7 @@ function LocationUpdater({ onLocationUpdate }) {
         (err) => {
           console.error("Geolocation error:", err);
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     }
   };
@@ -130,19 +100,17 @@ function LocationUpdater({ onLocationUpdate }) {
 }
 
 export default function MapComponent({ userLocation, partnerLocation, userName, partnerName, onLocationUpdate }) {
-  const [mapReady, setMapReady] = useState(false);
-  
-  useEffect(() => {
-    setMapReady(true);
-  }, []);
-  
-  const positions = [];
-  if (userLocation) positions.push([userLocation.lat, userLocation.lng]);
-  if (partnerLocation) positions.push([partnerLocation.lat, partnerLocation.lng]);
-  
   // Özel simgeler - React Icons kullanarak
   const userIcon = createCustomIcon(FaUser, "#3B82F6", 36); // Mavi kullanıcı simgesi
   const partnerIcon = createCustomIcon(FaHeart, "#EF4444", 36); // Kırmızı kalp simgesi
+  
+  const positions = [];
+  if (userLocation && userLocation.lat && userLocation.lng) {
+    positions.push([userLocation.lat, userLocation.lng]);
+  }
+  if (partnerLocation && partnerLocation.lat && partnerLocation.lng) {
+    positions.push([partnerLocation.lat, partnerLocation.lng]);
+  }
 
   return (
     <>
@@ -150,7 +118,8 @@ export default function MapComponent({ userLocation, partnerLocation, userName, 
       
       <MapContainer
         style={{ height: "100%", width: "100%" }}
-        zoom={13}
+        center={[35, 33]} // Default center coordinates for Cyprus
+        zoom={10}
         scrollWheelZoom={true}
       >
         <TileLayer
@@ -158,19 +127,19 @@ export default function MapComponent({ userLocation, partnerLocation, userName, 
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
-        {userLocation && (
+        {userLocation && userLocation.lat && userLocation.lng && (
           <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
             <Popup>{userName || "Ben"}</Popup>
           </Marker>
         )}
         
-        {partnerLocation && (
+        {partnerLocation && partnerLocation.lat && partnerLocation.lng && (
           <Marker position={[partnerLocation.lat, partnerLocation.lng]} icon={partnerIcon}>
             <Popup>{partnerName || "Partner"}</Popup>
           </Marker>
         )}
         
-        <SetViewOnLoad positions={positions} />
+        {positions.length > 0 && <SetViewOnLoad positions={positions} />}
       </MapContainer>
     </>
   );

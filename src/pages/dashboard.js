@@ -69,15 +69,20 @@ export default function Dashboard() {
           async (position) => {
             const { latitude, longitude } = position.coords;
             
-            // Get battery from our utility function
+            // Batarya seviyesini yardımcı fonksiyon ile al
             const batteryLevel = await getBatteryLevel();
             
             console.log("Updating location and battery:", { latitude, longitude, batteryLevel });
             
             try {
-              await updateLocationAndBattery(latitude, longitude, batteryLevel);
-              // Refresh data after updating location
-              await fetchData();
+              const result = await updateLocationAndBattery(latitude, longitude, batteryLevel);
+              if (result.success) {
+                console.log("Location and battery updated successfully");
+                // Güncellenen kullanıcı bilgilerini al
+                await fetchData();
+              } else {
+                console.error("Location update failed:", result.error);
+              }
             } catch (err) {
               console.error("Location update error:", err);
             }

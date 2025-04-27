@@ -66,7 +66,7 @@ try {
         $updateFields[] = "longitude = ?";
         $updateValues[] = $longitude;
     }
-    
+
     if ($batteryLevel !== null) {
         $updateFields[] = "battery_level = ?";
         $updateValues[] = $batteryLevel;
@@ -117,11 +117,11 @@ try {
     } else {
         echo json_encode(['success' => false, 'message' => 'Güncellenecek veri yok']);
     }
-    
+
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
-        'success' => false, 
+        'success' => false,
         'message' => 'Sunucu hatası', 
         'error' => $e->getMessage()
     ]);

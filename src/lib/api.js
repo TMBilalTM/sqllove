@@ -224,10 +224,16 @@ export const linkPartner = async (partnerCode) => {
 // Konum ve şarj durumunu güncelle
 export const updateLocationAndBattery = async (latitude, longitude, batteryLevel) => {
   // Validate inputs
-  if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+  if (typeof latitude !== 'number' || typeof longitude !== 'number' || isNaN(latitude) || isNaN(longitude)) {
     console.error("Invalid location data:", { latitude, longitude });
     return { success: false, error: "Invalid location data" };
   }
+  
+  // Ensure batteryLevel is a valid number or null
+  const validBatteryLevel = 
+    batteryLevel !== undefined && batteryLevel !== null && !isNaN(batteryLevel) 
+      ? batteryLevel 
+      : null;
   
   try {
     const response = await apiRequest('/user/update-status', {
@@ -235,7 +241,7 @@ export const updateLocationAndBattery = async (latitude, longitude, batteryLevel
       body: JSON.stringify({
         latitude,
         longitude,
-        batteryLevel: batteryLevel !== null ? batteryLevel : undefined
+        batteryLevel: validBatteryLevel
       }),
     });
     
@@ -249,7 +255,8 @@ export const updateLocationAndBattery = async (latitude, longitude, batteryLevel
     
     return { 
       success: true, 
-      message: response.data?.message || "Location updated successfully" 
+      message: response.data?.message || "Location updated successfully",
+      user: response.data?.user
     };
   } catch (error) {
     console.error("Error updating location:", error);
