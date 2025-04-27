@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync, FaUserCircle, FaRegPaperPlane } from "react-icons/fa";
+import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync, FaUserCircle, FaRegPaperPlane, FaUserMinus, FaExclamationTriangle } from "react-icons/fa";
 import Logo from "../components/Logo";
 import PermissionsManager from "../components/PermissionsManager";
 import RelationshipCounter from "../components/RelationshipCounter";
 import SpecialDates from "../components/SpecialDates";
-import { getCurrentUser, linkPartner, logout, updateLocationAndBattery } from "../lib/api";
+import { getCurrentUser, linkPartner, unlinkPartner, logout, updateLocationAndBattery } from "../lib/api";
 import { getBatteryLevel } from "../lib/battery";
 
 // Import serviceWorkerBridge functions if they exist, otherwise create empty placeholders
@@ -43,6 +43,8 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [backgroundActive, setBackgroundActive] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [unlinkModalOpen, setUnlinkModalOpen] = useState(false);
+  const [unlinkLoading, setUnlinkLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -201,6 +203,31 @@ export default function Dashboard() {
     }
   };
 
+  const handleUnlinkPartner = async () => {
+    if (!partner) return;
+    
+    setUnlinkLoading(true);
+    setError("");
+    
+    try {
+      const data = await unlinkPartner(partner.id);
+      
+      if (data.success) {
+        setSuccessMessage("Partner bağlantısı sonlandırıldı");
+        setUnlinkModalOpen(false);
+        setPartner(null);
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        setError(data.message || "Partner bağlantısı sonlandırılamadı");
+      }
+    } catch (err) {
+      setError("Bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
+      console.error(err);
+    } finally {
+      setUnlinkLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -244,6 +271,52 @@ export default function Dashboard() {
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
               </svg>
             </button>
+          </div>
+        )}
+
+        {/* Partner bağlantısını sonlandırma onay modalı */}
+        {unlinkModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                  <FaExclamationTriangle className="text-red-500 text-2xl" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Bağlantıyı Sonlandır</h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {partner?.name} ile partner bağlantınızı sonlandırmak istediğinize emin misiniz? Bu işlem geri alınamaz.
+                </p>
+              </div>
+              
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setUnlinkModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
+                  disabled={unlinkLoading}
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={handleUnlinkPartner}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center"
+                  disabled={unlinkLoading}
+                >
+                  {unlinkLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sonlandırılıyor...
+                    </>
+                  ) : (
+                    <>
+                      <FaUserMinus className="mr-2" /> Bağlantıyı Sonlandır
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -325,11 +398,21 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="love-card bg-white dark:bg-gray-800 p-6">
-              <div className="flex items-center mb-6">
-                <div className="w-12 h-12 mr-3 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <FaUserFriends className="text-xl text-blue-500" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 mr-3 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <FaUserFriends className="text-xl text-blue-500" />
+                  </div>
+                  <h2 className="text-xl font-semibold">Partner Bilgileri</h2>
                 </div>
-                <h2 className="text-xl font-semibold">Partner Bilgileri</h2>
+                
+                <button
+                  onClick={() => setUnlinkModalOpen(true)}
+                  className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                  title="Partnerliği sonlandır"
+                >
+                  <FaUserMinus />
+                </button>
               </div>
 
               <div className="space-y-6">
@@ -402,12 +485,10 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* İlişki sayacı bileşeni */}
             <div className="md:col-span-2">
               <RelationshipCounter />
             </div>
             
-            {/* Özel günler bileşeni */}
             <div className="md:col-span-2">
               <SpecialDates />
             </div>

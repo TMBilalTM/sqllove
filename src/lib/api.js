@@ -221,6 +221,25 @@ export const linkPartner = async (partnerCode) => {
   return { success: true, ...response.data };
 };
 
+// Partner bağlantısını sonlandır
+export const unlinkPartner = async (partnerId) => {
+  try {
+    const response = await fetch('/api/partner/unlink', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ partner_id: partnerId }),
+      credentials: 'include'
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Partner unlink error:', error);
+    throw error;
+  }
+};
+
 // Konum ve şarj durumunu güncelle
 export const updateLocationAndBattery = async (latitude, longitude, batteryLevel) => {
   // Validate inputs
