@@ -16,22 +16,25 @@ export default function Dashboard() {
   const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
-    // Kimlik doğrulama kontrolü
-    if (!checkAuth()) {
-      console.log("Oturum doğrulanamadı, giriş sayfasına yönlendiriliyor");
+    // Check if user is authenticated first
+    const isAuthenticated = checkAuth();
+    console.log("Dashboard auth check:", isAuthenticated);
+    
+    if (!isAuthenticated) {
+      console.log("User not authenticated, redirecting to login");
       router.push("/login");
       return;
     }
 
-    // Kullanıcı bilgilerini ve partner bilgilerini al
+    // Fetch user data only if authenticated
     async function fetchUserData() {
       try {
-        console.log("Kullanıcı bilgileri alınıyor...");
+        console.log("Fetching user data...");
         const data = await getCurrentUser();
-        console.log("Kullanıcı yanıtı:", data);
+        console.log("User data response:", data);
         
         if (!data || !data.user) {
-          console.error("Kullanıcı bilgileri alınamadı");
+          console.error("Failed to get user data");
           router.push("/login");
           return;
         }
@@ -43,7 +46,8 @@ export default function Dashboard() {
           setPartner(data.partner);
         }
       } catch (err) {
-        console.error("Kullanıcı bilgileri hatası:", err);
+        console.error("Error fetching user data:", err);
+        router.push("/login");
       } finally {
         setLoading(false);
       }

@@ -5,6 +5,46 @@
 // Oturum durumu için lokal depolama anahtarı
 const AUTH_STORAGE_KEY = 'sqllove_auth_state';
 
+// Kimlik bilgilerini localStorage'a kaydet
+function saveAuthState(userData) {
+  if (typeof window !== 'undefined') {
+    const authState = {
+      isAuthenticated: true,
+      user: userData,
+      token: userData.token || null,
+      timestamp: new Date().getTime()
+    };
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState));
+    console.log('Auth state saved to localStorage:', authState);
+    return authState;
+  }
+  return null;
+}
+
+// Kimlik bilgilerini localStorage'dan al
+function getAuthState() {
+  if (typeof window !== 'undefined') {
+    try {
+      const authState = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY));
+      if (authState && authState.isAuthenticated && authState.user) {
+        return authState;
+      }
+    } catch (e) {
+      console.error('Error reading auth state from localStorage:', e);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+  }
+  return null;
+}
+
+// Kimlik bilgilerini temizle
+function clearAuthState() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    console.log('Auth state cleared from localStorage');
+  }
+}
+
 // API istek işleyicisi
 const apiRequest = async (endpoint, options = {}) => {
   try {
@@ -30,132 +70,72 @@ const apiRequest = async (endpoint, options = {}) => {
     
     const response = await fetch(url, config);
     
-    // Check if response is OK
-    if (!response.ok) {
-      console.error(`API request failed: ${response.status} ${response.statusText}`);
-      
-      // Oturum hatalarını yakala
-      if (response.status === 401) {
-        clearAuthState();
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('authError'));
-          
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
-          }
-        }
-      }
+    // Parse response data
+    let data;
+    try {
+      data = await response.json();
+    } catch (err) {
+      console.error('Error parsing API response:', err);
+      return { 
+        ok: false, 
+        status: response.status,
+        error: 'Invalid JSON response'
+      };
     }
     
-    // Try to parse JSON response
-    try {
-      const data = await response.json();
-      return { ok: response.ok, status: response.status, data };
-    } catch (err) {
-      console.error('Error parsing JSON response', err);
-      return { ok: false, status: response.status, error: 'Invalid JSON response' };
+    // Handle auth errors
+    if (response.status === 401) {
+      clearAuthState();
+      return {
+        ok: false,
+        status: 401,
+        error: 'Authentication failed'
+      };
     }
+    
+    return {
+      ok: response.ok,
+      status: response.status,
+      data
+    };
   } catch (error) {
     console.error(`API request error: ${endpoint}`, error);
     return { ok: false, error: error.message };
   }
 };
 
-// Kimlik bilgilerini localStorage'a kaydet
-function saveAuthState(userData) {
-  if (typeof window !== 'undefined') {
-    const authState = {
-      isAuthenticated: true,
-      user: userData,
-      token: userData.token || null,
-      timestamp: new Date().getTime()
-    };
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState));
-    return authState;
-  }
-  return null;
-}
-
-// Kimlik bilgilerini localStorage'dan al
-function getAuthState() {
-  if (typeof window !== 'undefined') {
-    try {
-      const authState = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY));
-      if (authState && authState.timestamp) {
-        // 7 gün geçerliliği kontrol et
-        const now = new Date().getTime();
-        const sevenDays = 7 * 24 * 60 * 60 * 1000;
-        if (now - authState.timestamp > sevenDays) {
-          clearAuthState();
-          return null;
-        }
-      }
-      return authState;
-    } catch (e) {
-      clearAuthState();
-      return null;
-    }
-  }
-  return null;
-}
-
-// Kimlik bilgilerini temizle
-function clearAuthState() {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-  }
-}
-
 /* Kimlik Doğrulama API'leri */
+
+// Kimlik doğrulama durumunu kontrol et
+export const checkAuth = () => {
+  const authState = getAuthState();
+  console.log('checkAuth result:', authState ? true : false);
+  return authState !== null;
+};
 
 // Kullanıcı girişi
 export const login = async (email, password) => {
-  // For development/testing, try the direct login endpoint first
-  const isDevelopment = process.env.NODE_ENV === 'development' || 
-                        (typeof window !== 'undefined' && window.location.hostname === 'localhost');
-  
-  let endpoint = '/auth/login';
-  let directLogin = false;
-  
-  // Use direct login endpoint in development mode
-  if (isDevelopment) {
-    try {
-      console.log("Trying direct login API endpoint...");
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include'
-      });
-      
-      const data = await response.json();
-      if (response.ok) {
-        console.log("Direct login successful:", data);
-        return { success: true, ...data };
-      } else {
-        console.log("Direct login failed, trying CORS proxy...");
-      }
-    } catch (err) {
-      console.warn("Direct login error, falling back to CORS proxy:", err);
-    }
-  }
-  
-  // Fall back to CORS proxy
   console.log("Using CORS proxy for login...");
-  const response = await apiRequest(endpoint, {
+  const response = await apiRequest('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
   
   if (!response.ok) {
-    console.error("Login failed through CORS proxy:", response.error || response.message);
+    console.error("Login failed through CORS proxy:", response.error || response.data?.message);
     return { 
       success: false, 
-      message: response.error || response.message || 'Giriş başarısız oldu. Lütfen tekrar deneyin.' 
+      message: response.data?.message || response.error || 'Giriş başarısız oldu. Lütfen tekrar deneyin.' 
     };
   }
   
   console.log("Login successful through CORS proxy");
+  
+  // Store authentication state if login successful
+  if (response.data && response.data.user) {
+    saveAuthState(response.data.user);
+  }
+  
   return { success: true, ...response.data };
 };
 
@@ -167,11 +147,14 @@ export const register = async (name, email, password) => {
   });
   
   if (!response.ok) {
-    return { success: false, message: response.error || 'Kayıt başarısız' };
+    return { 
+      success: false, 
+      message: response.data?.message || response.error || 'Kayıt başarısız oldu.' 
+    };
   }
   
+  // Store auth state for successful registration
   if (response.data && response.data.user) {
-    // LocalStorage'a bilgileri kaydet
     saveAuthState(response.data.user);
   }
   
@@ -180,44 +163,31 @@ export const register = async (name, email, password) => {
 
 // Çıkış yapma
 export const logout = async () => {
-  await apiRequest('/auth/logout', {
-    method: 'POST',
-  });
+  try {
+    await apiRequest('/auth/logout', { method: 'POST' });
+  } finally {
+    clearAuthState();
+  }
   
-  clearAuthState();
   return { success: true };
-};
-
-/* Kullanıcı API'leri */
-
-// Kimlik doğrulama durumunu kontrol et
-export const checkAuth = () => {
-  const authState = getAuthState();
-  return authState && authState.isAuthenticated;
 };
 
 // Mevcut kullanıcının bilgilerini al
 export const getCurrentUser = async () => {
-  // Önce local storage'dan kontrol et
+  // First check if we have the user data in local storage
   const authState = getAuthState();
-  if (!authState || !authState.isAuthenticated) {
+  if (!authState) {
+    console.log('No auth state found, returning null');
     return null;
   }
   
-  // API'den güncel bilgileri al
+  // Try to get updated user info from API
   const response = await apiRequest('/user/me');
   
   if (!response.ok) {
-    clearAuthState();
-    return null;
-  }
-  
-  // İşlem başarılıysa yerel depolamayı güncelle
-  if (response.data && response.data.user) {
-    saveAuthState({
-      ...authState.user,
-      ...response.data.user
-    });
+    console.error('Failed to fetch current user:', response.error || response.data?.message);
+    // If API call fails but we have local data, still return the local data
+    return { user: authState.user };
   }
   
   return response.data;
@@ -242,7 +212,10 @@ export const linkPartner = async (partnerCode) => {
   });
   
   if (!response.ok) {
-    return { success: false, message: response.error || 'Partner linking failed' };
+    return { 
+      success: false, 
+      message: response.data?.message || response.error || 'Partner bağlantısı başarısız oldu.' 
+    };
   }
   
   return { success: true, ...response.data };
@@ -259,9 +232,5 @@ export const updateLocationAndBattery = async (latitude, longitude, batteryLevel
     }),
   });
   
-  if (!response.ok) {
-    return { success: false };
-  }
-  
-  return { success: true };
+  return { success: response.ok };
 };
