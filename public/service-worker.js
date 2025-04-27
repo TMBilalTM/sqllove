@@ -3,7 +3,11 @@
 const CACHE_NAME = 'sqllove-cache-v1';
 const urlsToCache = [
   '/',
-  '/index.html',
+  '/dashboard',
+  '/map',
+  '/download',
+  '/manifest.json',
+  '/favicon.ico',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
   // Daha fazla dosya eklenebilir
@@ -14,6 +18,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
+        console.log('Cache opened');
         return cache.addAll(urlsToCache);
       })
   );
@@ -28,10 +33,35 @@ self.addEventListener('fetch', event => {
         if (response) {
           return response;
         }
-        return fetch(event.request);
-      }
-    )
-  );
+        
+        // Clone the request
+        const fetchRequest = event.request.clone();
+        
+        // API istekleri için cache'leme yapmıyoruz (sadece statik dosyalar)
+        if (fetchRequest.url.includes('/api/')) {
+          return fetch(fetchRequest);
+        }
+
+        return fetch(fetchRequest).then(
+          response => {
+            // Check if we received a valid response
+            if(!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+
+            // Clone the response
+            const responseToCache = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then(cache => {
+                cache.put(event.request, responseToCache);
+              });
+
+            return response;
+          }
+        );
+      })
+    );
 });
 
 // Service worker aktivasyonu ve eski cache'lerin temizlenmesi

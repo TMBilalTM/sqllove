@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync, FaUserCircle, FaRegPaperPlane, FaUserMinus, FaExclamationTriangle } from "react-icons/fa";
+import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy, FaSignOutAlt, FaSync, FaUserCircle, FaRegPaperPlane, FaUserMinus, FaExclamationTriangle, FaDownload } from "react-icons/fa";
 import Logo from "../components/Logo";
 import PermissionsManager from "../components/PermissionsManager";
 import RelationshipCounter from "../components/RelationshipCounter";
@@ -242,6 +242,13 @@ export default function Dashboard() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <Logo size="md" />
           <div className="flex items-center gap-3">
+            <Link 
+              href="/download"
+              className="p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              title="Uygulamayı İndir"
+            >
+              <FaDownload />
+            </Link>
             <button 
               onClick={handleRefresh} 
               className={`p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition ${refreshing ? 'animate-spin' : ''}`}

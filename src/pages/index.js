@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Image from "next/image";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
-import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserPlus, FaSignInAlt, FaMobile, FaShieldAlt, FaTachometerAlt, FaPaperPlane, FaRegSmile } from "react-icons/fa";
+import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserPlus, FaSignInAlt, FaMobile, FaShieldAlt, FaTachometerAlt, FaPaperPlane, FaRegSmile, FaDownload } from "react-icons/fa";
 import Logo from "../components/Logo";
 import { getCurrentUser } from "../lib/api";
 
@@ -60,27 +60,41 @@ export default function Home() {
               // Show loading state
               <div className="w-24 h-10 bg-gray-200 dark:bg-gray-700 animate-pulse rounded-full"></div>
             ) : isLoggedIn ? (
-              // Show dashboard button for logged in users
-              <Link 
-                href="/dashboard" 
-                className="btn-love flex items-center gap-2 px-6 py-2 rounded-full"
-              >
-                <FaTachometerAlt /> Panel
-              </Link>
+              // Show dashboard and download buttons for logged in users
+              <div className="flex gap-3">
+                <Link 
+                  href="/download" 
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                >
+                  <FaDownload /> <span className="hidden sm:inline">İndir</span>
+                </Link>
+                <Link 
+                  href="/dashboard" 
+                  className="btn-love flex items-center gap-2 px-6 py-2 rounded-full"
+                >
+                  <FaTachometerAlt /> <span>Panel</span>
+                </Link>
+              </div>
             ) : (
-              // Show login/signup buttons for guests
+              // Show download, login, and signup buttons for guests
               <>
+                <Link 
+                  href="/download" 
+                  className="flex items-center gap-1 px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                >
+                  <FaDownload /> <span className="hidden sm:inline">İndir</span>
+                </Link>
                 <Link 
                   href="/login" 
                   className="flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                 >
-                  <FaSignInAlt /> Giriş
+                  <FaSignInAlt /> <span>Giriş</span>
                 </Link>
                 <Link 
                   href="/signup" 
                   className="btn-love flex items-center gap-2 px-4 py-2 rounded-full"
                 >
-                  <FaUserPlus /> Kayıt Ol
+                  <FaUserPlus /> <span>Kayıt Ol</span>
                 </Link>
               </>
             )}
