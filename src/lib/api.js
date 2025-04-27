@@ -110,20 +110,52 @@ function clearAuthState() {
 
 // Kullanıcı girişi
 export const login = async (email, password) => {
-  const response = await apiRequest('/auth/login', {
+  // For development/testing, try the direct login endpoint first
+  const isDevelopment = process.env.NODE_ENV === 'development' || 
+                        (typeof window !== 'undefined' && window.location.hostname === 'localhost');
+  
+  let endpoint = '/auth/login';
+  let directLogin = false;
+  
+  // Use direct login endpoint in development mode
+  if (isDevelopment) {
+    try {
+      console.log("Trying direct login API endpoint...");
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      if (response.ok) {
+        console.log("Direct login successful:", data);
+        return { success: true, ...data };
+      } else {
+        console.log("Direct login failed, trying CORS proxy...");
+      }
+    } catch (err) {
+      console.warn("Direct login error, falling back to CORS proxy:", err);
+    }
+  }
+  
+  // Fall back to CORS proxy
+  console.log("Using CORS proxy for login...");
+  const response = await apiRequest(endpoint, {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
   
   if (!response.ok) {
-    return { success: false, message: response.error || 'Giriş başarısız' };
+    console.error("Login failed through CORS proxy:", response.error || response.message);
+    return { 
+      success: false, 
+      message: response.error || response.message || 'Giriş başarısız oldu. Lütfen tekrar deneyin.' 
+    };
   }
   
-  if (response.data && response.data.user) {
-    // LocalStorage'a bilgileri kaydet
-    saveAuthState(response.data.user);
-  }
-  
+  console.log("Login successful through CORS proxy");
   return { success: true, ...response.data };
 };
 

@@ -1,88 +1,103 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
 /**
- * CORS Proxy for Kibrisquiz.com API
+ * CORS Proxy for Kibrisquiz.com API - Improved implementation
+ * This handles API requests and forwards them to the target API
  */
 export default async function handler(req, res) {
   // Get the target endpoint from query
   const { endpoint } = req.query;
   
   if (!endpoint) {
-    return res.status(400).json({ error: 'API endpoint not specified' });
+    console.error('No endpoint specified in CORS proxy request');
+    return res.status(400).json({ success: false, message: 'API endpoint not specified' });
   }
 
-  const targetUrl = `https://kibrisquiz.com/api/${endpoint}`;
+  // Build the full target URL
+  const targetUrl = `https://kibrisquiz.com/api/${endpoint.replace(/^\//, '')}`;
   
   try {
-    // Prepare headers from the incoming request
+    console.log(`[CORS Proxy] Forwarding ${req.method} request to: ${targetUrl}`);
+    
+    // Prepare headers for the outgoing request
     const headers = {
       'Content-Type': 'application/json',
     };
     
-    // Forward authorization header if present
+    // Copy any authorization header
     if (req.headers.authorization) {
       headers['Authorization'] = req.headers.authorization;
     }
     
-    // Forward cookies if present
-    if (req.headers.cookie) {
-      headers['Cookie'] = req.headers.cookie;
-    }
-    
+    // Prepare the fetch options
     const fetchOptions = {
       method: req.method,
       headers,
-      credentials: 'include',
     };
     
-    // Include body for POST, PUT, PATCH requests
-    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) {
-      fetchOptions.body = JSON.stringify(req.body);
+    // For POST/PUT/PATCH requests, add the body
+    if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+      if (req.body) {
+        // Log request body for debugging (sanitize sensitive info in production)
+        const debugBody = { ...req.body };
+        if (debugBody.password) debugBody.password = '***';
+        console.log(`[CORS Proxy] Request body:`, debugBody);
+        
+        fetchOptions.body = JSON.stringify(req.body);
+      }
     }
     
-    // Log request details for debugging
-    console.log(`[CORS Proxy] ${req.method} ${targetUrl}`);
-    
-    // Make the request to the external API
+    // Make the request to the target API
     const response = await fetch(targetUrl, fetchOptions);
+    console.log(`[CORS Proxy] Received response with status: ${response.status}`);
     
-    // Get response data
-    let data;
+    // Create a basic response with the same status code
+    res.status(response.status);
+    
+    // Parse the response body
+    let responseBody;
     const contentType = response.headers.get('content-type');
     
     if (contentType && contentType.includes('application/json')) {
       try {
-        data = await response.json();
-      } catch (e) {
-        console.error('[CORS Proxy] JSON parse error:', e);
-        data = { error: 'Invalid JSON response from API' };
+        responseBody = await response.json();
+        console.log('[CORS Proxy] Response parsed as JSON:', responseBody);
+      } catch (error) {
+        console.error('[CORS Proxy] Error parsing JSON response:', error);
+        responseBody = { 
+          success: false, 
+          message: 'Error parsing API response',
+          error: error.message
+        };
       }
     } else {
-      // Handle non-JSON responses
       const text = await response.text();
-      console.error('[CORS Proxy] Non-JSON response:', text.substring(0, 100));
-      data = { error: 'Non-JSON response from API' };
+      console.error(`[CORS Proxy] Received non-JSON response: ${text.substring(0, 100)}...`);
+      responseBody = { 
+        success: false, 
+        message: 'API returned non-JSON response',
+        responseText: text.substring(0, 200)
+      };
     }
     
-    // Copy status code from the API response
-    res.status(response.status);
-    
-    // Forward all headers that we want to expose
-    for (const [key, value] of Object.entries(response.headers.raw())) {
-      if (['set-cookie', 'authorization'].includes(key.toLowerCase())) {
-        res.setHeader(key, value);
-      }
+    // Forward any Set-Cookie headers from the API response
+    const setCookieHeader = response.headers.get('set-cookie');
+    if (setCookieHeader) {
+      res.setHeader('Set-Cookie', setCookieHeader);
     }
     
-    // Return the API response
-    return res.json(data);
+    // Return the response body
+    return res.json(responseBody);
     
   } catch (error) {
-    console.error(`[CORS Proxy] Error: ${error.message}`);
-    return res.status(500).json({ 
-      error: 'Proxy error', 
-      message: error.message,
-      endpoint: endpoint
+    console.error(`[CORS Proxy] Error forwarding request to ${targetUrl}:`, error);
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Giriş başarısız',
+      proxyError: 'API isteği sırasında bir hata oluştu',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
