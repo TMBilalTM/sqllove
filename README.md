@@ -24,6 +24,87 @@ The `pages/api` directory is mapped to `/api/*`. Files in this directory are tre
 
 This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Toast Notifications Library Recommendation
+
+For notifications, you can use one of the following popular libraries:
+
+### 1. React-Toastify
+
+```bash
+npm install react-toastify
+```
+
+#### Setup
+
+```jsx
+// In _app.js file
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+export default function App({ Component, pageProps }) {
+  return (
+    <>
+      <Component {...pageProps} />
+      <ToastContainer position="bottom-center" />
+    </>
+  );
+}
+```
+
+#### Usage
+
+```jsx
+import { toast } from 'react-toastify';
+
+// Success notification
+toast.success('Operation successful!');
+
+// Error notification
+toast.error('An error occurred!');
+
+// Info notification
+toast.info('Information!');
+```
+
+### 2. React-Hot-Toast (Lighter option)
+
+```bash
+npm install react-hot-toast
+```
+
+#### Setup
+
+```jsx
+// In _app.js file
+import { Toaster } from 'react-hot-toast';
+
+export default function App({ Component, pageProps }) {
+  return (
+    <>
+      <Component {...pageProps} />
+      <Toaster position="bottom-center" />
+    </>
+  );
+}
+```
+
+#### Usage
+
+```jsx
+import toast from 'react-hot-toast';
+
+// Success notification
+toast.success('Operation successful!');
+
+// Error notification
+toast.error('An error occurred!');
+
+// Custom notification
+toast('Hello!');
+```
+
+These libraries offer customizable and easy-to-use notifications.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

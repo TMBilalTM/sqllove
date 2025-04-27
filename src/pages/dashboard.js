@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [backgroundActive, setBackgroundActive] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const fetchData = useCallback(async () => {
     try {
@@ -65,13 +66,15 @@ export default function Dashboard() {
     }
   }, [router]);
 
-  // Refresh data handler without toast notification for now
+  // Refresh data handler without toast
   const handleRefresh = async () => {
     setRefreshing(true);
+    setSuccessMessage("");
+    
     try {
       await fetchData();
-      // Temporarily use console.log instead of toast
-      console.log('Bilgiler güncellendi');
+      setSuccessMessage("Bilgiler güncellendi");
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
       console.error("Refresh error:", err);
     } finally {
@@ -153,12 +156,13 @@ export default function Dashboard() {
     };
   }, [router, fetchData]);
 
-  // Handle partner code submit without toast for now
+  // Handle partner code submit without toast
   const handlePartnerCodeSubmit = async (e) => {
     e.preventDefault();
     
     setLoading(true);
     setError("");
+    setSuccessMessage("");
     
     try {
       const data = await linkPartner(enteredCode);
@@ -166,7 +170,8 @@ export default function Dashboard() {
       if (data.success) {
         setPartner(data.partner);
         setEnteredCode("");
-        console.log(`${data.partner.name} ile bağlantınız kuruldu!`);
+        setSuccessMessage(`${data.partner.name} ile bağlantınız kuruldu!`);
+        setTimeout(() => setSuccessMessage(""), 3000);
         await fetchData();
       } else {
         setError(data.message || "Partner bağlantısı başarısız oldu.");
@@ -228,6 +233,17 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-8">
+        {successMessage && (
+          <div className="mb-4 p-3 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-xl text-sm border-l-4 border-green-500 flex justify-between items-center">
+            <span>{successMessage}</span>
+            <button onClick={() => setSuccessMessage("")} className="text-green-700 dark:text-green-300 hover:opacity-75">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+              </svg>
+            </button>
+          </div>
+        )}
+
         <div className="love-card bg-white dark:bg-gray-800 p-6 mb-8">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
             <div className="w-20 h-20 bg-gradient-to-br from-pink-400 to-red-500 rounded-full flex items-center justify-center text-white text-3xl">
