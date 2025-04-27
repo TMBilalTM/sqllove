@@ -4,7 +4,9 @@ const withPWA = NextPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development'
+  disable: process.env.NODE_ENV === 'development',
+  // Add buildExcludes to fix the precaching error
+  buildExcludes: [/middleware-manifest\.json$/, /_middleware\.js$/, /_middleware\.js\.map$/, /dynamic-css-manifest\.json$/],
 });
 
 /** @type {import('next').NextConfig} */
