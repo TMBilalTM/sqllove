@@ -1,14 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { FaMapMarkerAlt, FaHeart, FaRegDotCircle, FaCrosshairs } from "react-icons/fa";
+import { FaMapMarkerAlt, FaHeart, FaCrosshairs } from "react-icons/fa";
 import { updateLocationAndBattery } from "../lib/api";
 import { getBatteryLevel } from "../lib/battery";
 import dynamic from "next/dynamic";
 
-// Leaflet'i sadece client-side'da import et
-const LeafletModule = dynamic(() => import('./LeafletModule'), {
-  ssr: false,
-  loading: () => <div className="h-screen flex items-center justify-center">Harita yükleniyor...</div>
-});
+// Import Leaflet dynamically with no SSR
+let L;
+const LeafletModule = dynamic(
+  () => import('./LeafletModule').then(module => {
+    L = module.default; // Assign the default export to L
+    return module;
+  }),
+  { ssr: false, loading: () => <div className="h-screen flex items-center justify-center">Harita yükleniyor...</div> }
+);
 
 export default function MapComponent({
   userLocation,
@@ -25,9 +29,10 @@ export default function MapComponent({
   // Map referansını izlemek için ref
   const mapRef = useRef(null);
   
-  // Leaflet ve L'yi dinamik olarak import et
+  // Initialize map when component is mounted
   useEffect(() => {
-    if (!LeafletModule || typeof window === "undefined") return;
+    if (!L || typeof window === "undefined") return;
+    if (map) return;
 
     try {
       console.log("Initializing map");
@@ -55,18 +60,11 @@ export default function MapComponent({
       console.error("Error initializing map:", err);
       setError("Harita yüklenirken bir hata oluştu");
     }
-    
-    return () => {
-      if (mapRef.current) {
-        console.log("Removing map");
-        mapRef.current.remove();
-      }
-    };
-  }, []);
-
-  // Marker'ları oluştur ve güncelle
+  }, [map]);
+  
+  // Update markers when location changes
   useEffect(() => {
-    if (!map) return;
+    if (!map || !L) return;
 
     try {
       const newMarkers = { ...markers };
@@ -79,7 +77,7 @@ export default function MapComponent({
           // Kullanıcı markeri henüz oluşturulmadıysa oluştur
           const userIcon = L.divIcon({
             html: `<div class="map-marker user-marker"><div class="marker-icon">
-                    <i class="fa-map-marker-alt"></i></div><div class="marker-pulse"></div></div>`,
+                    <i class="fa fa-map-marker-alt"></i></div><div class="marker-pulse"></div></div>`,
             className: 'user-marker-container',
             iconSize: [40, 40],
             iconAnchor: [20, 40],
@@ -111,7 +109,7 @@ export default function MapComponent({
           // Partner markeri henüz oluşturulmadıysa oluştur
           const partnerIcon = L.divIcon({
             html: `<div class="map-marker partner-marker"><div class="marker-icon">
-                    <i class="fa-heart"></i></div><div class="marker-pulse"></div></div>`,
+                    <i class="fa fa-heart"></i></div><div class="marker-pulse"></div></div>`,
             className: 'partner-marker-container',
             iconSize: [40, 40],
             iconAnchor: [20, 40],
@@ -195,9 +193,9 @@ export default function MapComponent({
     } catch (err) {
       console.error("Error updating markers:", err);
     }
-  }, [map, userLocation, partnerLocation, userName, partnerName, userView]);
-  
-  // Konum güncelleme işlemleri için useEffect
+  }, [map, userLocation, partnerLocation, userName, partnerName, markers, userView]);
+
+  // Konum güncelleme işlemleri
   useEffect(() => {
     if (!onLocationUpdate) return;
     
@@ -236,10 +234,9 @@ export default function MapComponent({
     }
   };
 
-  if (!LeafletModule) return null;
-  
   return (
     <>
+      <LeafletModule />
       <div id="map" className="w-full h-full z-10"></div>
       
       {error && (
