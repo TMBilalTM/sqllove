@@ -1,7 +1,7 @@
 {
   "name": "SQLLove",
   "short_name": "SQLLove",
-  "description": "Sevgililer için konum ve şarj takip uygulaması",
+  "description": "Sevgililer için uygulama",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
