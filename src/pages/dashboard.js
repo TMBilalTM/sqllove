@@ -5,9 +5,9 @@ import { FaHeart, FaMapMarkerAlt, FaBatteryThreeQuarters, FaUserFriends, FaCopy,
 import Logo from "../components/Logo";
 import PermissionsManager from "../components/PermissionsManager";
 import RelationshipTimer from "../components/RelationshipTimer";
-import { getCurrentUser, linkPartner, logout, updateLocationAndBattery, getBatteryLevel } from "../lib/api";
-import { registerLocationWorker, getLocationWorker, getTrackingStatus } from "../lib/serviceWorkerBridge";
-import { showToast } from "../lib/toast";
+import { showToast, showSuccess, showError } from "../lib/toast";
+import { getCurrentUser, linkPartner, logout, updateLocationAndBattery } from "../lib/api";
+import { getBatteryLevel } from "../lib/battery";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -51,11 +51,11 @@ export default function Dashboard() {
     try {
       await fetchData();
       // Show success toast
-      showToast('Bilgiler güncellendi', 'success', 3000);
+      showSuccess('Bilgiler güncellendi', 3000);
     } catch (err) {
       console.error("Refresh error:", err);
       // Show error toast
-      showToast('Bilgiler güncellenirken hata oluştu', 'error', 5000);
+      showError('Bilgiler güncellenirken hata oluştu', 5000);
     } finally {
       setTimeout(() => setRefreshing(false), 1000);
     }
@@ -149,7 +149,7 @@ export default function Dashboard() {
         setPartner(data.partner);
         setEnteredCode("");
         // Show success toast
-        showToast(`${data.partner.name} ile bağlantınız kuruldu! ❤️`, 'success', 5000);
+        showSuccess(`${data.partner.name} ile bağlantınız kuruldu! ❤️`, 5000);
         // Refresh data
         await fetchData();
       } else {
