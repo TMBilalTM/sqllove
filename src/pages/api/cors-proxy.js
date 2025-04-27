@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
 /**
- * Kibrisquiz.com API için CORS proxy
+ * Kibrisquiz.com API için CORS proxy aAAsfyarlayıcı
  * Bu dosya, frontend'den gelen istekleri kibrisquiz.com'a ileterek CORS sorunlarını çözer
  */
 export default async function handler(req, res) {
@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   if (!endpoint) {
     return res.status(400).json({ error: 'API endpoint belirtilmedi' });
   }
-  
+
   const targetUrl = `https://kibrisquiz.com/api/${endpoint}`;
   
   try {
