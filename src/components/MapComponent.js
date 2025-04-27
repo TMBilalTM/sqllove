@@ -195,7 +195,7 @@ export default function MapComponent({ userLocation, partnerLocation, userName, 
     } catch (err) {
       console.error("Error updating markers:", err);
     }
-  }, [map, userLocation, partnerLocation, userName, partnerName]);
+  }, [map, userLocation, partnerLocation, userName, partnerName, markers]); // Added markers dependency
 
   // Update location at regular intervals
   useEffect(() => {
@@ -222,7 +222,7 @@ export default function MapComponent({ userLocation, partnerLocation, userName, 
     }, 30000);
     
     return () => clearInterval(updateInterval);
-  }, [onLocationUpdate, markers, updateLocationAndBattery]); // Add markers as dependency
+  }, [onLocationUpdate]); // Removed updateLocationAndBattery dependency
 
   if (error) {
     return (

@@ -9,10 +9,10 @@ module.exports = {
     },
   },
   rules: {
-    // Disable the rule for unescaped entities since we're using Turkish characters and apostrophes
+    // Disable the rule for unescaped entities to avoid issues with quotes and apostrophes
     'react/no-unescaped-entities': 'off',
     
-    // You can optionally add a better rule for React Hooks dependencies
+    // Configure React Hooks dependencies properly
     'react-hooks/exhaustive-deps': [
       'warn',
       {

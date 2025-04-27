@@ -143,8 +143,8 @@ export default function Download() {
                     <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
                   </svg>
                 </span> tıklayın</li>
-                <li>Aşağıdan "<strong>Ana Ekrana Ekle</strong>" seçeneğine tıklayın</li>
-                <li>İsmi onaylayın ve "<strong>Ekle</strong>" düğmesine basın</li>
+                <li>Aşağıdan &quot;Ana Ekrana Ekle&quot; seçeneğine tıklayın</li>
+                <li>İsmi onaylayın ve &quot;Ekle&quot; düğmesine basın</li>
               </ol>
             </div>
             
@@ -160,8 +160,8 @@ export default function Download() {
               <ol className="list-decimal pl-6 space-y-4">
                 <li>Chrome tarayıcısında <strong>SQLLove</strong> web sitesini açın</li>
                 <li>Sağ üstteki üç nokta menüsüne tıklayın</li>
-                <li>Görünen menüden "<strong>Ana Ekrana Ekle</strong>" seçeneğine tıklayın</li>
-                <li>İsmi onaylayın ve "<strong>Ekle</strong>" düğmesine basın</li>
+                <li>Görünen menüden &quot;Ana Ekrana Ekle&quot; seçeneğine tıklayın</li>
+                <li>İsmi onaylayın ve &quot;Ekle&quot; düğmesine basın</li>
               </ol>
             </div>
             
@@ -176,8 +176,8 @@ export default function Download() {
               
               <ol className="list-decimal pl-6 space-y-4">
                 <li>Chrome veya Edge tarayıcısında <strong>SQLLove</strong> web sitesini açın</li>
-                <li>Adres çubuğunun sağındaki "<strong>Yükle</strong>" simgesine tıklayın</li>
-                <li>Açılan diyalog kutusunda "<strong>Yükle</strong>" düğmesine basın</li>
+                <li>Adres çubuğunun sağındaki &quot;Yükle&quot; simgesine tıklayın</li>
+                <li>Açılan diyalog kutusunda &quot;Yükle&quot; düğmesine basın</li>
                 <li>Uygulama masaüstü kısayolu oluşturulacak ve başlatılacaktır</li>
               </ol>
             </div>

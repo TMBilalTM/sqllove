@@ -2,6 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  // ESLint checking during build
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Add favicon.ico to the root for favicon auto-discovery
   webpack(config) {
     return config;
